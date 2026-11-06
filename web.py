@@ -145,6 +145,9 @@ async def discord_callback(request: Request, code: str, state: str):
         user_response.raise_for_status()
         user = user_response.json()
 
+    for old_id, old_session in list(_sessions.items()):
+        if old_session.get("expires_at", 0) <= time():
+            _sessions.pop(old_id, None)
     session_id = secrets.token_urlsafe(32)
     expires_in = max(60, int(token_data.get("expires_in", 604800)))
     _sessions[session_id] = {
@@ -177,7 +180,6 @@ async def who_am_i(request: Request):
     return {
         "authenticated": True,
         "username": session["username"],
-        "divisions": [str(role_id) for role_id in member.get("roles", [])],
     }
 
 
@@ -190,7 +192,7 @@ async def logout(request: Request):
             _sessions.pop(session_id, None)
         except (BadSignature, TypeError):
             pass
-    response = RedirectResponse(os.getenv("WEB_POST_LOGOUT_URL", "/"), status_code=303)
+    response = JSONResponse({"ok": True})
     response.delete_cookie("tsrp_ai_session", path="/", secure=True, httponly=True, samesite="none")
     return response
 

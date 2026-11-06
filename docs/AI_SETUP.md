@@ -19,7 +19,7 @@ Set these in the hosting provider. Never commit real values:
 - `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`: OAuth2 application credentials for the TSRP AI Discord application.
 - `DISCORD_GUILD_ID`: the TSRP Discord server ID.
 - `DISCORD_REDIRECT_URI`: exact callback URL, `https://YOUR-API-HOST/auth/discord/callback`; register this exact URL in Discord Developer Portal.
-- `WEB_POST_LOGIN_URL` and `WEB_POST_LOGOUT_URL`: absolute website URLs to return to after login/logout.
+- `WEB_POST_LOGIN_URL`: absolute website URL to return to after login.
 
 ## Configure Discord OAuth
 1. Open the Discord Developer Portal for the dedicated TSRP AI application.

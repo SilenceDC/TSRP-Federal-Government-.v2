@@ -1,0 +1,8 @@
+[
+  {
+    "title": "TSRP Government Overview",
+    "path": "data/knowledge/public/government_overview.md",
+    "visibility": "public",
+    "allowed_role_ids": []
+  }
+]

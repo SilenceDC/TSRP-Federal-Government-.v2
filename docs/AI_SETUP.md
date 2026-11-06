@@ -21,7 +21,7 @@ Secrets:
 - GROQ_API_KEY
 - DISCORD_CLIENT_SECRET
 - DISCORD_PUBLIC_KEY
-- DISCORD_BOT_TOKEN (needed only when registering or updating the slash command)
+- DISCORD_BOT_TOKEN is used locally only when registering or updating the slash command; do not add it as a Worker secret.
 
 Non-secret variables:
 - DISCORD_CLIENT_ID

@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: tsrp-ai-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn web:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: WEB_ALLOWED_ORIGINS
+        sync: false
+      - key: AI_MODEL
+        value: llama-3.3-70b-versatile
+  - type: worker
+    name: tsrp-ai-discord
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m bot.assistant
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: AI_MODEL
+        value: llama-3.3-70b-versatile

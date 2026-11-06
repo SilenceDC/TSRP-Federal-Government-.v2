@@ -1,339 +1,334 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TSRP Federal Government</title>
-<style>
-:root {
-  --navy: #101d35;
-  --navy2: #192b49;
-  --gold: #c9a45c;
-  --light: #f3f5f8;
-  --text: #202b3b;
-  --muted: #718096;
-}
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  background: var(--light);
-  color: var(--text);
-}
-header {
-  background: var(--navy);
-  color: white;
-  border-bottom: 3px solid var(--gold);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-.topbar {
-  max-width: 1200px;
-  margin: auto;
-  padding: 16px 22px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-}
-.brand { display: flex; align-items: center; gap: 12px; }
-.seal {
-  width: 43px;
-  height: 43px;
-  border: 2px solid var(--gold);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-}
-.brand strong { display: block; font-size: 16px; }
-.brand small { color: #c5cedb; font-size: 10px; letter-spacing: 1.5px; }
-nav { display: flex; gap: 20px; flex-wrap: wrap; }
-nav a {
-  color: white;
-  text-decoration: none;
-  font-size: 13px;
-}
-nav a:hover { color: var(--gold); }
-.hero {
-  background: linear-gradient(115deg, #101d35, #243b60);
-  color: white;
-  padding: 95px 22px 100px;
-}
-.hero-inner { max-width: 1100px; margin: auto; }
-.eyebrow {
-  color: var(--gold);
-  font-size: 12px;
-  letter-spacing: 2px;
-  font-weight: bold;
-}
-.hero h1 {
-  font-size: clamp(35px, 6vw, 58px);
-  max-width: 750px;
-  line-height: 1.08;
-  margin: 20px 0;
-}
-.hero p {
-  max-width: 620px;
-  color: #d1d9e5;
-  line-height: 1.8;
-}
-.actions { display: flex; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
-.btn {
-  padding: 13px 22px;
-  text-decoration: none;
-  display: inline-block;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 13px;
-}
-.primary { background: var(--gold); color: #172238; }
-.secondary { border: 1px solid #aeb9ca; color: white; }
-.container { max-width: 1100px; margin: auto; padding: 65px 22px; }
-.section-head { margin-bottom: 28px; }
-.section-head small { color: #a17c38; letter-spacing: 2px; font-weight: bold; }
-.section-head h2 { color: var(--navy); font-size: 29px; margin: 9px 0; }
-.section-head p { color: var(--muted); line-height: 1.6; }
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 17px;
-}
-.card {
-  background: white;
-  padding: 24px;
-  border: 1px solid #e0e5ec;
-  border-radius: 5px;
-  transition: .2s;
-}
-.card:hover { transform: translateY(-3px); border-color: var(--gold); }
-.card-icon { font-size: 28px; }
-.card h3 { color: var(--navy); margin: 15px 0 8px; }
-.card p { color: var(--muted); font-size: 13px; line-height: 1.7; }
-.card a { color: #98712d; text-decoration: none; font-weight: bold; font-size: 13px; }
-.stats {
-  background: white;
-  border-bottom: 1px solid #e1e5eb;
-}
-.statrow {
-  max-width: 1100px;
-  margin: auto;
-  padding: 27px 22px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  text-align: center;
-  gap: 15px;
-}
-.stat strong { display: block; font-size: 27px; color: var(--navy); }
-.stat span { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
-.dark-section { background: var(--navy); color: white; }
-.dark-section h2 { color: white; }
-.dark-section .section-head p { color: #bdc9d8; }
-.position {
-  background: white;
-  border-radius: 5px;
-  padding: 18px;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-}
-.position strong { color: var(--navy); }
-.position small { display: block; color: var(--muted); margin-top: 6px; }
-.open { color: #16864d; font-size: 12px; font-weight: bold; }
-footer {
-  background: #0b1528;
-  color: #b8c3d2;
-  text-align: center;
-  padding: 35px 20px;
-  font-size: 12px;
-  line-height: 1.8;
-}
-footer strong { color: white; }
-@media(max-width:700px) {
-  .topbar { align-items: flex-start; flex-direction: column; }
-  nav { gap: 12px; }
-  .hero { padding: 65px 22px; }
-  .statrow { grid-template-columns: 1fr; }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101d35">
+  <meta name="description" content="The TSRP Federal Government portal — explore government branches, departments, public services and career opportunities.">
+  <title>TSRP Federal Government | Official Portal</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #101d35;
+      --navy-2: #1b2d4b;
+      --navy-3: #263d60;
+      --gold: #d1ad68;
+      --gold-dark: #a9823d;
+      --paper: #f4f6f9;
+      --white: #fff;
+      --ink: #1d293b;
+      --muted: #65738a;
+      --line: #e1e6ee;
+      --green: #168451;
+      --shadow: 0 18px 48px rgba(16, 29, 53, .09);
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 92px; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+    a { color: inherit; }
+    a:focus-visible, button:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
+    .skip-link {
+      position: absolute; left: 12px; top: -60px; z-index: 100;
+      padding: 10px 14px; background: white; color: var(--navy); border-radius: 6px;
+    }
+    .skip-link:focus { top: 12px; }
+    .site-header {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(16, 29, 53, .97);
+      color: white; border-bottom: 3px solid var(--gold);
+      backdrop-filter: blur(12px);
+    }
+    .nav-wrap {
+      max-width: 1160px; min-height: 76px; margin: auto; padding: 12px 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; min-width: 0; }
+    .seal {
+      width: 46px; height: 46px; flex: 0 0 46px; display: grid; place-items: center;
+      border: 1px solid var(--gold); border-radius: 50%; color: var(--gold); font-size: 24px;
+      background: rgba(255,255,255,.04);
+    }
+    .brand-name { display: block; font-size: 13px; font-weight: 800; letter-spacing: .07em; line-height: 1.3; }
+    .brand-sub { display: block; color: #bdc8d8; font-size: 9px; letter-spacing: .2em; margin-top: 4px; }
+    .nav-links { display: flex; align-items: center; gap: 25px; }
+    .nav-links a {
+      color: #e6ebf2; font-size: 13px; font-weight: 650; text-decoration: none;
+      transition: color .2s ease;
+    }
+    .nav-links a:hover { color: var(--gold); }
+    .nav-toggle {
+      display: none; border: 1px solid rgba(255,255,255,.35); background: transparent;
+      color: white; border-radius: 7px; padding: 8px 11px; font: inherit; cursor: pointer;
+    }
+    .hero {
+      position: relative; overflow: hidden; color: white;
+      background: radial-gradient(ellipse at 82% 20%, rgba(209,173,104,.18), transparent 32%),
+                  linear-gradient(120deg, var(--navy) 0%, #1c3152 65%, #263e61 100%);
+    }
+    .hero::after {
+      content: "★"; position: absolute; right: max(5vw, calc((100vw - 1160px)/2));
+      top: 48px; color: rgba(255,255,255,.055); font-size: clamp(180px, 32vw, 390px);
+      line-height: 1; pointer-events: none;
+    }
+    .hero-inner {
+      position: relative; z-index: 1; max-width: 1160px; margin: auto;
+      padding: clamp(76px, 10vw, 132px) 24px clamp(78px, 10vw, 128px);
+    }
+    .eyebrow { color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: .23em; text-transform: uppercase; }
+    h1 {
+      max-width: 780px; margin: 18px 0 18px; font-size: clamp(42px, 7vw, 76px);
+      line-height: 1.03; letter-spacing: -.045em; font-weight: 800;
+    }
+    .hero-copy { max-width: 620px; color: #d5deea; font-size: clamp(15px, 2vw, 18px); line-height: 1.8; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+    .button {
+      display: inline-flex; align-items: center; justify-content: center; min-height: 46px;
+      padding: 12px 19px; border: 1px solid transparent; border-radius: 7px;
+      font-size: 13px; font-weight: 800; text-decoration: none; transition: transform .2s, background .2s;
+    }
+    .button:hover { transform: translateY(-2px); }
+    .button-primary { color: #18243a; background: var(--gold); }
+    .button-primary:hover { background: #e0c184; }
+    .button-outline { color: white; border-color: rgba(255,255,255,.48); background: rgba(255,255,255,.04); }
+    .button-outline:hover { background: rgba(255,255,255,.12); }
+    .stats-band { background: white; border-bottom: 1px solid var(--line); }
+    .stats {
+      max-width: 1160px; margin: auto; padding: 25px 24px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+    }
+    .stat { text-align: center; padding: 6px 12px; }
+    .stat strong { display: block; color: var(--navy); font-size: 27px; line-height: 1.2; }
+    .stat span { display: block; margin-top: 6px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .13em; }
+    .section { max-width: 1160px; margin: auto; padding: 82px 24px; }
+    .section-heading { max-width: 680px; margin-bottom: 30px; }
+    .section-kicker { color: var(--gold-dark); font-size: 10px; font-weight: 850; letter-spacing: .2em; text-transform: uppercase; }
+    h2 { margin: 8px 0 10px; color: var(--navy); font-size: clamp(28px, 4vw, 38px); line-height: 1.15; letter-spacing: -.025em; }
+    .section-heading p { margin: 0; color: var(--muted); font-size: 15px; }
+    .card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .card {
+      min-height: 218px; padding: 25px; background: white; border: 1px solid var(--line);
+      border-radius: var(--radius); box-shadow: 0 4px 16px rgba(16,29,53,.025);
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .card:hover { transform: translateY(-4px); border-color: #d6c095; box-shadow: var(--shadow); }
+    .card-icon {
+      width: 48px; height: 48px; display: grid; place-items: center; border-radius: 10px;
+      background: #f5f0e5; font-size: 24px;
+    }
+    .card h3 { margin: 17px 0 8px; color: var(--navy); font-size: 18px; }
+    .card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.75; }
+    .card-link { display: inline-block; margin-top: 17px; color: var(--gold-dark); font-size: 12px; font-weight: 850; text-decoration: none; }
+    .dark-section { background: var(--navy); }
+    .dark-section .section-heading h2 { color: white; }
+    .dark-section .section-heading p { color: #c0cada; }
+    .dark-section .section-kicker { color: var(--gold); }
+    .department-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .department {
+      display: flex; align-items: flex-start; gap: 14px; padding: 20px;
+      border: 1px solid rgba(255,255,255,.13); border-radius: 10px; background: rgba(255,255,255,.055);
+    }
+    .department-icon { font-size: 23px; }
+    .department h3 { margin: 0 0 5px; color: white; font-size: 15px; }
+    .department p { margin: 0; color: #bdc9d9; font-size: 12px; line-height: 1.65; }
+    .career-section { padding-top: 80px; padding-bottom: 82px; }
+    .career-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
+    .career-card {
+      padding: 21px; border: 1px solid var(--line); border-radius: 10px; background: white;
+    }
+    .career-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .career-card h3 { margin: 0; color: var(--navy); font-size: 16px; }
+    .status {
+      flex: 0 0 auto; padding: 4px 8px; border-radius: 30px; background: #e9f6ef;
+      color: var(--green); font-size: 9px; font-weight: 900; letter-spacing: .08em;
+    }
+    .career-card p { margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+    .notice {
+      margin-top: 18px; padding: 13px 16px; border-left: 3px solid var(--gold);
+      background: #fff; color: var(--muted); font-size: 12px; border-radius: 0 7px 7px 0;
+    }
+    .about-panel {
+      display: flex; align-items: center; justify-content: space-between; gap: 30px;
+      padding: 34px; border: 1px solid rgba(255,255,255,.15); border-radius: 12px;
+      background: linear-gradient(120deg, rgba(255,255,255,.075), rgba(255,255,255,.025));
+    }
+    .about-panel p { max-width: 720px; margin: 0; color: #c4cfde; font-size: 14px; line-height: 1.8; }
+    .about-panel .button { flex: 0 0 auto; }
+    footer { padding: 34px 24px; background: #0a1426; color: #aebacc; text-align: center; font-size: 11px; line-height: 1.9; }
+    footer strong { color: white; letter-spacing: .1em; }
+    footer .footer-note { color: #8290a5; }
+    @media (max-width: 850px) {
+      .nav-wrap { flex-wrap: wrap; }
+      .nav-toggle { display: inline-flex; }
+      .nav-links { display: none; width: 100%; padding: 8px 0 12px; flex-direction: column; align-items: flex-start; gap: 15px; }
+      .nav-links.is-open { display: flex; }
+      .card-grid, .department-grid, .career-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .about-panel { align-items: flex-start; flex-direction: column; }
+    }
+    @media (max-width: 560px) {
+      .nav-wrap { padding: 11px 18px; }
+      .brand-name { font-size: 11px; }
+      .hero-inner { padding-left: 20px; padding-right: 20px; }
+      .stats { grid-template-columns: 1fr; gap: 5px; padding: 18px 20px; }
+      .stat { padding: 10px; }
+      .section { padding: 62px 20px; }
+      .card-grid, .department-grid, .career-list { grid-template-columns: 1fr; }
+      .card { min-height: auto; }
+      .about-panel { padding: 24px; }
+      .actions .button { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="#home" aria-label="TSRP Federal Government home">
+        <span class="seal" aria-hidden="true">🦅</span>
+        <span>
+          <span class="brand-name">TSRP FEDERAL GOVERNMENT</span>
+          <span class="brand-sub">OFFICIAL COMMUNITY PORTAL</span>
+        </span>
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav">Menu ☰</button>
+      <nav class="nav-links" id="primary-nav" aria-label="Main navigation">
+        <a href="#home">Home</a>
+        <a href="#branches">Government</a>
+        <a href="#departments">Departments</a>
+        <a href="#careers">Careers</a>
+        <a href="#about">About</a>
+      </nav>
+    </div>
+  </header>
 
-<header>
-  <div class="topbar">
-    <div class="brand">
-      <div class="seal">🦅</div>
-      <div>
-        <strong>TSRP FEDERAL GOVERNMENT</strong>
-        <small>OFFICIAL GOVERNMENT PORTAL</small>
+  <main id="main">
+    <section class="hero" id="home">
+      <div class="hero-inner">
+        <div class="eyebrow">The TSRP Federal Government</div>
+        <h1>Service. Leadership.<br>One Community.</h1>
+        <p class="hero-copy">Welcome to the TSRP Federal Government portal. Explore the institutions that serve our community, learn about federal departments and discover opportunities to get involved.</p>
+        <div class="actions">
+          <a class="button button-primary" href="#branches">Explore Government</a>
+          <a class="button button-outline" href="#careers">View Career Opportunities</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="stats-band" aria-label="Government overview">
+      <div class="stats">
+        <div class="stat"><strong>3</strong><span>BRANCHES OF GOVERNMENT</span></div>
+        <div class="stat"><strong>6</strong><span>FEDERAL DEPARTMENTS</span></div>
+        <div class="stat"><strong>24/7</strong><span>PORTAL ACCESS</span></div>
       </div>
     </div>
-    <nav>
-      <a href="#home">Home</a>
-      <a href="#branches">Government</a>
-      <a href="#departments">Departments</a>
-      <a href="#careers">Careers</a>
-      <a href="#about">About</a>
-    </nav>
-  </div>
-</header>
 
-<main>
-<section class="hero" id="home">
-  <div class="hero-inner">
-    <div class="eyebrow">THE TSRP FEDERAL GOVERNMENT</div>
-    <h1>Serving the People.<br>Leading the Nation.</h1>
-    <p>
-      Welcome to the official portal of the TSRP Federal Government.
-      Discover our government branches, explore departments,
-      find career opportunities and stay informed about national affairs.
-    </p>
-    <div class="actions">
-      <a class="btn primary" href="#branches">Explore Government</a>
-      <a class="btn secondary" href="#careers">View Open Positions</a>
-    </div>
-  </div>
-</section>
-
-<div class="stats">
-  <div class="statrow">
-    <div class="stat">
-      <strong>3</strong>
-      <span>BRANCHES OF GOVERNMENT</span>
-    </div>
-    <div class="stat">
-      <strong>4</strong>
-      <span>GOVERNMENT SECTORS</span>
-    </div>
-    <div class="stat">
-      <strong>24/7</strong>
-      <span>ONLINE GOVERNMENT PORTAL</span>
-    </div>
-  </div>
-</div>
-
-<section class="container" id="branches">
-  <div class="section-head">
-    <small>HOW WE GOVERN</small>
-    <h2>Branches of Government</h2>
-    <p>Explore the institutions responsible for leading and governing TSRP.</p>
-  </div>
-  <div class="grid">
-    <div class="card">
-      <div class="card-icon">🏛️</div>
-      <h3>Executive Branch</h3>
-      <p>Led by the President, responsible for executive leadership and administration.</p>
-      <a href="#departments">Explore branch →</a>
-    </div>
-    <div class="card">
-      <div class="card-icon">⚖️</div>
-      <h3>Legislative Branch</h3>
-      <p>Responsible for legislation, representation and government oversight.</p>
-      <a href="#departments">Explore branch →</a>
-    </div>
-    <div class="card">
-      <div class="card-icon">🏛️</div>
-      <h3>Judicial Branch</h3>
-      <p>Responsible for justice, legal interpretation and judicial proceedings.</p>
-      <a href="#departments">Explore branch →</a>
-    </div>
-  </div>
-</section>
-
-<section class="dark-section" id="departments">
-  <div class="container">
-    <div class="section-head">
-      <small>PUBLIC ADMINISTRATION</small>
-      <h2>Government Departments</h2>
-      <p>Meet the institutions serving the federal government.</p>
-    </div>
-    <div class="grid">
-      <div class="card">
-        <div class="card-icon">🛡️</div>
-        <h3>Department of Defense</h3>
-        <p>National defense, security and military administration.</p>
+    <section class="section" id="branches">
+      <div class="section-heading">
+        <div class="section-kicker">How we are organized</div>
+        <h2>Branches of Government</h2>
+        <p>Three branches work together to support leadership, representation and justice across TSRP.</p>
       </div>
-      <div class="card">
-        <div class="card-icon">🌎</div>
-        <h3>Department of State</h3>
-        <p>Foreign affairs and diplomatic relations.</p>
+      <div class="card-grid">
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">🏛️</div>
+          <h3>Executive Branch</h3>
+          <p>Led by the President, the Executive Branch oversees administration, leadership and the implementation of government policy.</p>
+          <a class="card-link" href="#departments">Explore departments →</a>
+        </article>
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">📜</div>
+          <h3>Legislative Branch</h3>
+          <p>Responsible for representation, considering legislation and providing oversight of government operations.</p>
+          <a class="card-link" href="#departments">Explore departments →</a>
+        </article>
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">⚖️</div>
+          <h3>Judicial Branch</h3>
+          <p>Supports the administration of justice, legal interpretation and fair judicial proceedings.</p>
+          <a class="card-link" href="#careers">View opportunities →</a>
+        </article>
       </div>
-      <div class="card">
-        <div class="card-icon">⚖️</div>
-        <h3>Department of Justice</h3>
-        <p>Federal law enforcement and legal affairs.</p>
-      </div>
-      <div class="card">
-        <div class="card-icon">💰</div>
-        <h3>Department of Treasury</h3>
-        <p>Financial administration and economic policy.</p>
-      </div>
-      <div class="card">
-        <div class="card-icon">🏥</div>
-        <h3>Department of Homeland Security</h3>
-        <p>Homeland protection and emergency preparedness.</p>
-      </div>
-      <div class="card">
-        <div class="card-icon">📋</div>
-        <h3>White House Staff</h3>
-        <p>Executive administration and presidential support.</p>
-      </div>
-    </div>
-  </div>
-</section>
+    </section>
 
-<section class="container" id="careers">
-  <div class="section-head">
-    <small>JOIN OUR GOVERNMENT</small>
-    <h2>Career Opportunities</h2>
-    <p>Explore opportunities to serve within the TSRP Federal Government.</p>
-  </div>
-  <div class="grid">
-    <div class="position">
-      <div><strong>Secretary of State</strong><small>Cabinet</small></div>
-      <span class="open">● OPEN</span>
-    </div>
-    <div class="position">
-      <div><strong>Federal Judge</strong><small>Judicial Branch</small></div>
-      <span class="open">● OPEN</span>
-    </div>
-    <div class="position">
-      <div><strong>Representative</strong><small>Legislative Branch</small></div>
-      <span class="open">● OPEN</span>
-    </div>
-  </div>
-  <p style="color:#718096;font-size:12px;margin-top:18px">
-    Demonstration positions only. Live vacancies will be connected to the
-    government Discord bot in a future version.
-  </p>
-</section>
+    <section class="dark-section" id="departments">
+      <div class="section">
+        <div class="section-heading">
+          <div class="section-kicker">Public administration</div>
+          <h2>Federal Departments</h2>
+          <p>Learn about the teams and institutions that help the federal government serve the TSRP community.</p>
+        </div>
+        <div class="department-grid">
+          <article class="department"><span class="department-icon" aria-hidden="true">🛡️</span><div><h3>Department of Defense</h3><p>Coordinates national defense, security and military administration within the roleplay community.</p></div></article>
+          <article class="department"><span class="department-icon" aria-hidden="true">🌎</span><div><h3>Department of State</h3><p>Handles foreign affairs, diplomacy and relations with other communities.</p></div></article>
+          <article class="department"><span class="department-icon" aria-hidden="true">⚖️</span><div><h3>Department of Justice</h3><p>Supports federal legal affairs, law enforcement coordination and justice initiatives.</p></div></article>
+          <article class="department"><span class="department-icon" aria-hidden="true">💰</span><div><h3>Department of Treasury</h3><p>Oversees financial administration, budgeting and economic policy.</p></div></article>
+          <article class="department"><span class="department-icon" aria-hidden="true">🚨</span><div><h3>Department of Homeland Security</h3><p>Coordinates homeland protection, public safety and emergency preparedness.</p></div></article>
+          <article class="department"><span class="department-icon" aria-hidden="true">🏛️</span><div><h3>White House Staff</h3><p>Provides executive support, administration and assistance to the President.</p></div></article>
+        </div>
+      </div>
+    </section>
 
-<section class="dark-section" id="about">
-  <div class="container">
-    <div class="section-head">
-      <small>ABOUT THE ADMINISTRATION</small>
-      <h2>Government. Service. Leadership.</h2>
-      <p>
-        The TSRP Federal Government is a roleplay government administration
-        dedicated to organized leadership, public service and effective
-        government operations within the TSRP community.
-      </p>
-    </div>
-    <a class="btn primary" href="#home">Back to top ↑</a>
-  </div>
-</section>
-</main>
+    <section class="section career-section" id="careers">
+      <div class="section-heading">
+        <div class="section-kicker">Make a difference</div>
+        <h2>Career Opportunities</h2>
+        <p>Interested in serving the TSRP community? Explore the example positions below.</p>
+      </div>
+      <div class="career-list">
+        <article class="career-card"><div class="career-top"><h3>Secretary of State</h3><span class="status">EXAMPLE</span></div><p>Cabinet · Executive Branch</p></article>
+        <article class="career-card"><div class="career-top"><h3>Federal Judge</h3><span class="status">EXAMPLE</span></div><p>Judicial Branch</p></article>
+        <article class="career-card"><div class="career-top"><h3>Representative</h3><span class="status">EXAMPLE</span></div><p>Legislative Branch</p></article>
+      </div>
+      <div class="notice"><strong>Demo content:</strong> These are placeholder positions, not confirmed live vacancies. Live openings can be connected to the government Discord bot in a later update.</div>
+    </section>
 
-<footer>
-  <strong>TSRP FEDERAL GOVERNMENT</strong><br>
-  Official Government Portal<br>
-  An independent roleplay government project.<br><br>
-  © 2026 TSRP Federal Government. All rights reserved.
-</footer>
+    <section class="dark-section" id="about">
+      <div class="section">
+        <div class="section-heading">
+          <div class="section-kicker">About the administration</div>
+          <h2>Government built around service.</h2>
+        </div>
+        <div class="about-panel">
+          <p>The TSRP Federal Government is a roleplay government administration dedicated to organized leadership, public service and effective government operations within the TSRP community. This portal is an independent community project and is not affiliated with any real-world government.</p>
+          <a class="button button-primary" href="#home">Back to top ↑</a>
+        </div>
+      </div>
+    </section>
+  </main>
 
+  <footer>
+    <strong>TSRP FEDERAL GOVERNMENT</strong><br>
+    Official Community Portal<br>
+    <span class="footer-note">An independent roleplay government project. Not an official real-world government website.</span><br><br>
+    © 2026 TSRP Federal Government. All rights reserved.
+  </footer>
+
+  <script>
+    const menuButton = document.querySelector('.nav-toggle');
+    const navigation = document.querySelector('#primary-nav');
+
+    menuButton.addEventListener('click', () => {
+      const isOpen = menuButton.getAttribute('aria-expanded') === 'true';
+      menuButton.setAttribute('aria-expanded', String(!isOpen));
+      navigation.classList.toggle('is-open', !isOpen);
+    });
+
+    navigation.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => {
+        navigation.classList.remove('is-open');
+        menuButton.setAttribute('aria-expanded', 'false');
+      });
+    });
+  </script>
 </body>
 </html>

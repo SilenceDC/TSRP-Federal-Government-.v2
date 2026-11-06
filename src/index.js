@@ -294,7 +294,29 @@ export default {
         const answer = await answerQuestion(env, question, roleIds, publicOnly);
         return json({ answer, authenticated: !publicOnly });
       }
-      return env.ASSETS.fetch(request);
+      const assetResponse = await env.ASSETS.fetch(request);
+      if (
+        assetResponse.ok &&
+        (url.pathname === "/" || url.pathname === "/index.html") &&
+        (assetResponse.headers.get("content-type") || "").includes("text/html")
+      ) {
+        const html = await assetResponse.text();
+        const cleanHtml = html.replace(
+          /<meta name="tsrp-ai-api" content="[^"]*">\s*/i,
+          ""
+        );
+        const headers = new Headers(assetResponse.headers);
+        headers.delete("content-length");
+        headers.delete("content-encoding");
+        headers.delete("etag");
+        headers.set("cache-control", "no-store");
+        return new Response(cleanHtml, {
+          status: assetResponse.status,
+          statusText: assetResponse.statusText,
+          headers
+        });
+      }
+      return assetResponse;
     } catch (error) {
       return json({ detail: error?.message || "Unexpected server error." }, 500);
     }

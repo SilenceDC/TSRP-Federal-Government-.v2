@@ -1,40 +1,58 @@
 # TSRP AI setup
 
-TSRP AI is being added as a separate service so the existing static website and vacancy synchronizer remain intact.
+TSRP AI is a separate service so the existing static website and vacancy synchronizer remain intact.
 
-## Current components
+## Components
 - Discord bot slash command: `/ask` (run `python -m bot.assistant`).
-- Public website API: FastAPI `web:app`, with `GET /api/health` and `POST /api/ask`.
+- FastAPI website API: `GET /api/health`, `POST /api/ask`, and `GET /api/me`.
+- Discord OAuth routes: `GET /auth/discord`, `GET /auth/discord/callback`, and `POST /auth/logout`.
 - Knowledge base: Markdown files listed in `data/knowledge/manifest.json`.
-- Source-grounded answers with source titles and an explicit "not found" response.
 
-## Required secrets and environment
-Set these in the hosting provider's secret/environment settings. Never commit real values:
-- `TSRP_AI_DISCORD_TOKEN`: token for a dedicated TSRP AI Discord bot application. Keep it separate from the vacancy snapshot bot token.
-- `GROQ_API_KEY`: Groq API key used server-side.
+## Required environment variables
+Set these in the hosting provider. Never commit real values:
+- `TSRP_AI_DISCORD_TOKEN`: dedicated AI bot token.
+- `GROQ_API_KEY`: server-side model API key.
 - `AI_MODEL` (optional): defaults to `llama-3.3-70b-versatile`.
 - `AI_BASE_URL` (optional): defaults to Groq's OpenAI-compatible API.
-- `WEB_ALLOWED_ORIGINS`: comma-separated website origins allowed to call the API, e.g. the GitHub Pages origin.
+- `WEB_ALLOWED_ORIGINS`: exact website origin(s), comma-separated.
+- `SESSION_SECRET`: long random secret used to sign opaque session cookies. Render can generate this.
+- `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`: OAuth2 application credentials for the TSRP AI Discord application.
+- `DISCORD_GUILD_ID`: the TSRP Discord server ID.
+- `DISCORD_REDIRECT_URI`: exact callback URL, `https://YOUR-API-HOST/auth/discord/callback`; register this exact URL in Discord Developer Portal.
+- `WEB_POST_LOGIN_URL` and `WEB_POST_LOGOUT_URL`: absolute website URLs to return to after login/logout.
 
-The AI bot needs permission to use application commands in the server. It does not need Administrator permission or the privileged Members intent for the current role-check implementation.
+## Configure Discord OAuth
+1. Open the Discord Developer Portal for the dedicated TSRP AI application.
+2. Under OAuth2, add the exact `DISCORD_REDIRECT_URI` as a redirect.
+3. Use the OAuth2 scopes `identify` and `guilds.members.read`. The app uses the returned access token to verify current membership and fetch the member's live role IDs from the configured server.
+4. Invite the AI bot to the TSRP server with application-command permissions. Do not grant Administrator.
+5. In Render, set every environment variable above. Do not put client secrets or tokens in frontend JavaScript.
 
-## Deployment
-The included `render.yaml` defines separate web and worker services. Connect the repository to Render, configure the secret values when prompted, and deploy. The website API is not live until the web service is deployed and its public URL is configured in the static website frontend.
+The login flow uses a one-time state value and an HttpOnly, Secure, SameSite=None cookie. OAuth access tokens remain in the API process, not in the browser cookie. Member roles are fetched from Discord on every authenticated ask; role IDs supplied by the browser are never trusted. The current session store is in-memory and single-instance: restarting the API logs users out, and multiple API instances require a shared server-side session store (for example Redis).
 
-## Knowledge and confidentiality
-- Only documents marked `visibility: public` are currently included in the public repository.
-- A restricted document must have an explicit `allowed_role_ids` allowlist in the manifest. The code checks this allowlist before reading the file.
-- The supplied Executive, Cabinet, Legislative, Judicial, and USSS division IDs are recorded for reference only; they are not document permissions.
-- Do not upload private Melonly exports, presidential/cabinet/USSS confidential records, personal data, API keys, or bot tokens to this public repository.
-- Website requests are anonymous and can retrieve public documents only. Discord requests use the invoking member's current Discord roles for per-document allowlist checks.
-- For restricted material, add a document only in a private repository or private storage location and explicitly authorize the exact role IDs that may read it. Do not rely on prompt instructions as access control.
+## Website integration
+Add a visible "Sign in with Discord" link to `https://YOUR-API-HOST/auth/discord`. For API calls from the website, use `fetch` with `credentials: "include"` and JSON content type. Call `GET /api/me` to show login state. Anonymous users may ask public questions; authenticated members are checked against their current Discord roles. Cross-site cookies can be blocked by some browser privacy settings; a same-site custom domain for the website and API is preferable.
 
-## Add knowledge
-1. Export the relevant Melonly document as text or Markdown.
-2. Review it for personal data, secrets, and confidential content.
-3. Put public material in `data/knowledge/public/`.
-4. Add its title, relative path, visibility, and allowlist to `data/knowledge/manifest.json`.
-5. Keep restricted material outside this public repository until a private storage integration is configured.
+Example browser request:
 
-## Important limitation
-This initial release does not implement Discord OAuth login for the website. The website API is therefore public-knowledge-only. Do not expose private document search on the website until OAuth identity verification and server-side role checks are implemented.
+```js
+const response = await fetch("https://YOUR-API-HOST/api/ask", {
+  method: "POST",
+  credentials: "include",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ question: "What does the Executive Branch do?" })
+});
+const data = await response.json();
+```
+
+## Document access rules
+- Each manifest entry must explicitly specify `visibility` and `allowed_role_ids`.
+- Public documents use `visibility: "public"`.
+- Restricted documents use `visibility: "restricted"` and an explicit allowlist of exact Discord role IDs. The retrieval code authorizes a document before opening or scoring its contents.
+- Division roles supplied for TSRP are: Executive `1561074965363560568`, Cabinet `1561075778303828190`, Legislative Branch `1561076079710576700`, Judicial Branch `1561076654170832958`, and USSS `1567623961544757349`. They are membership/grouping roles, not automatic permission grants; add only the role IDs approved for each document.
+- Discord `/ask` uses the invoking member's live roles. Website `/api/ask` uses live roles fetched through OAuth. Anonymous website requests are public-only.
+- **This GitHub repository is public.** Never put confidential or restricted plaintext documents in it: GitHub visitors can read files directly, regardless of API authorization. Restricted documents must be stored in a private repository or private storage provider and retrieved server-side only. That private storage adapter is not included in this change.
+- The Melonly export has not yet been imported. Only reviewed, non-confidential information currently present in the public knowledge base can be answered.
+
+## Deploy
+The Render blueprint defines a web API and a separate Discord worker. Connect the repository to Render, set the variables, deploy both services, then add the website sign-in link and API URL to the static site. The API is not live until deployment is complete.

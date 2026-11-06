@@ -1,0 +1,17 @@
+# Keep source, configuration and docs out of the public static asset bundle.
+src/
+migrations/
+scripts/
+docs/
+bot/
+tsrp_ai/
+.github/
+node_modules/
+.env
+.env.*
+wrangler.jsonc
+package.json
+package-lock.json
+requirements.txt
+render.yaml
+README.md

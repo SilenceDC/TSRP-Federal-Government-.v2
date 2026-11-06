@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101d35">
   <meta name="description" content="The TSRP Federal Government portal — explore government branches, departments, public services and career opportunities.">
-  <meta name="tsrp-ai-api" content="https://YOUR-API-HOST">
+  <meta name="tsrp-ai-api" content="">
   <title>TSRP Federal Government | Official Portal</title>
   <style>
     :root {
@@ -360,7 +360,7 @@
       });
     });
 
-    const AI_API_BASE = document.querySelector('meta[name="tsrp-ai-api"]').content.replace(/\/$/, '');
+    const AI_API_BASE = document.querySelector('meta[name="tsrp-ai-api"]').content.trim().replace(/\/$/, '') || window.location.origin;
     const aiLogin = document.getElementById('ai-login');
     const aiLogout = document.getElementById('ai-logout');
     const aiStatus = document.getElementById('ai-status');

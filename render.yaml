@@ -7,9 +7,9 @@ services:
     envVars:
       - key: DISCORD_TOKEN
         sync: false
-      - key: GROQ_API_KEY
-        sync: false
       - key: GUILD_ID
         sync: false
-      - key: GROQ_MODEL
-        value: llama-3.3-70b-versatile
+      - key: WEBSITE_SYNC_URL
+        sync: false
+      - key: WEBSITE_SYNC_SECRET
+        sync: false

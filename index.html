@@ -292,23 +292,14 @@ footer strong { color: white; }
     <h2>Career Opportunities</h2>
     <p>Explore opportunities to serve within the TSRP Federal Government.</p>
   </div>
-  <div class="grid">
+  <div class="grid" id="live-positions">
     <div class="position">
-      <div><strong>Secretary of State</strong><small>Cabinet</small></div>
-      <span class="open">● OPEN</span>
-    </div>
-    <div class="position">
-      <div><strong>Federal Judge</strong><small>Judicial Branch</small></div>
-      <span class="open">● OPEN</span>
-    </div>
-    <div class="position">
-      <div><strong>Representative</strong><small>Legislative Branch</small></div>
-      <span class="open">● OPEN</span>
+      <div><strong>Loading positions…</strong><small>Connecting to the government role tracker</small></div>
+      <span class="open">● SYNCING</span>
     </div>
   </div>
-  <p style="color:#718096;font-size:12px;margin-top:18px">
-    Demonstration positions only. Live vacancies will be connected to the
-    government Discord bot in a future version.
+  <p id="positions-updated" style="color:#718096;font-size:12px;margin-top:18px">
+    Vacancy information is refreshed automatically from Discord approximately every 5 minutes.
   </p>
 </section>
 
@@ -334,6 +325,52 @@ footer strong { color: white; }
   An independent roleplay government project.<br><br>
   © 2026 TSRP Federal Government. All rights reserved.
 </footer>
+
+
+<script>
+(async function loadGovernmentPositions() {
+  const container = document.getElementById("live-positions");
+  const updated = document.getElementById("positions-updated");
+  try {
+    const response = await fetch("data/positions.json?cache=" + Date.now(), { cache: "no-store" });
+    if (!response.ok) throw new Error("Vacancy data is not available yet.");
+    const data = await response.json();
+    if (!Array.isArray(data.positions) || data.positions.length === 0) {
+      container.textContent = "The first Discord vacancy sync has not run yet.";
+      return;
+    }
+    container.replaceChildren();
+    for (const position of data.positions) {
+      const card = document.createElement("div");
+      card.className = "position";
+      const details = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = position.title || "Government position";
+      const branch = document.createElement("small");
+      branch.textContent = position.branch || "";
+      details.append(title, branch);
+      const status = document.createElement("span");
+      status.className = "open";
+      if (position.status === "unconfigured") {
+        status.textContent = "● ROLE NOT CONFIGURED";
+      } else if (position.vacant > 0) {
+        status.textContent = "● " + position.vacant + " OPEN";
+      } else {
+        status.textContent = "● FILLED";
+      }
+      card.append(details, status);
+      container.append(card);
+    }
+    if (data.updated_at) {
+      const date = new Date(data.updated_at);
+      updated.textContent = "Last updated: " + date.toLocaleString() + " · Refreshes approximately every 5 minutes.";
+    }
+  } catch (error) {
+    container.textContent = "Live vacancies are temporarily unavailable. Please check back shortly.";
+    updated.textContent = error.message;
+  }
+})();
+</script>
 
 </body>
 </html>

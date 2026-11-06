@@ -27,13 +27,13 @@ Cloudflare currently lists a Workers Free allowance of 100,000 requests/day and 
 7. Set non-secret Worker variables in Cloudflare dashboard (Worker → Settings → Variables) or wrangler.jsonc:
    - **DISCORD_CLIENT_ID** and **DISCORD_APPLICATION_ID** — your dedicated TSRP AI Discord application ID.
    - **DISCORD_GUILD_ID** — the TSRP Discord server ID.
-   - **DISCORD_REDIRECT_URI** — https://YOUR-WORKER.workers.dev/auth/discord/callback (use your actual Worker hostname).
-   - **WEB_POST_LOGIN_URL** — the website URL, normally the same Worker origin.
+   - **DISCORD_REDIRECT_URI** — after the first deployment, set this to https://YOUR-WORKER.workers.dev/auth/discord/callback using your actual Worker hostname.
+   - **WEB_POST_LOGIN_URL** — after the first deployment, set this to the website URL, normally the same Worker origin.
    - **AI_MODEL** — defaults to llama-3.3-70b-versatile.
-8. In Discord Developer Portal → OAuth2, add the exact redirect URI above. OAuth scopes are identify and guilds.members.read.
-9. In Discord Developer Portal → General Information, copy the Public Key into Worker secret DISCORD_PUBLIC_KEY.
-10. Deploy with **npm run deploy**. The first deployment creates the workers.dev hostname.
-11. If the hostname differs from the redirect URI entered earlier, update DISCORD_REDIRECT_URI and the Discord OAuth redirect, then deploy again.
+8. In Discord Developer Portal → General Information, copy the Public Key into Worker secret DISCORD_PUBLIC_KEY.
+9. Deploy once with **npm run deploy**. The first deployment creates the workers.dev hostname. The OAuth routes will remain unconfigured until you set the remaining variables.
+10. Set DISCORD_REDIRECT_URI and WEB_POST_LOGIN_URL to the actual Worker hostname, then add the exact redirect URI in Discord Developer Portal → OAuth2. OAuth scopes are identify and guilds.members.read.
+11. Deploy again with **npm run deploy**.
 12. Register the server slash command from the project folder:
     - macOS/Linux: **DISCORD_APPLICATION_ID=... DISCORD_BOT_TOKEN=... DISCORD_GUILD_ID=... npm run discord:register**
     - Windows PowerShell: set those three environment variables first, then run **npm run discord:register**.

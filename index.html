@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101d35">
   <meta name="description" content="The TSRP Federal Government portal — explore government branches, departments, public services and career opportunities.">
+  <meta name="tsrp-ai-api" content="https://YOUR-API-HOST">
   <title>TSRP Federal Government | Official Portal</title>
   <style>
     :root {
@@ -149,6 +150,14 @@
       color: var(--green); font-size: 9px; font-weight: 900; letter-spacing: .08em;
     }
     .career-card p { margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+    .ai-panel { padding: 26px; background: white; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .ai-auth { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .ai-status { color: var(--muted); font-size: 13px; }
+    .ai-chat { display: grid; gap: 12px; }
+    .ai-chat textarea { width: 100%; min-height: 100px; resize: vertical; padding: 13px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+    .ai-answer { min-height: 70px; padding: 16px; border-radius: 8px; background: #f4f6f9; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+    .ai-answer:empty { display: none; }
+    .ai-chat button { cursor: pointer; }
     .notice {
       margin-top: 18px; padding: 13px 16px; border-left: 3px solid var(--gold);
       background: #fff; color: var(--muted); font-size: 12px; border-radius: 0 7px 7px 0;
@@ -206,6 +215,7 @@
         <a href="#branches">Government</a>
         <a href="#departments">Departments</a>
         <a href="#careers">Careers</a>
+        <a href="#tsrp-ai">TSRP AI</a>
         <a href="#about">About</a>
       </nav>
     </div>
@@ -290,6 +300,28 @@
       <div class="notice" id="positions-updated">Vacancy information is refreshed automatically from Discord approximately every 5 minutes.</div>
     </section>
 
+    <section class="section" id="tsrp-ai">
+      <div class="section-heading">
+        <div class="section-kicker">Government information assistant</div>
+        <h2>Ask TSRP AI</h2>
+        <p>Sign in with Discord so TSRP AI can verify your current server membership and division roles before answering from approved documents. Visitors who are not signed in can ask public-information questions only.</p>
+      </div>
+      <div class="ai-panel">
+        <div class="ai-auth">
+          <a class="button button-primary" id="ai-login" href="#">Sign in with Discord</a>
+          <button class="button button-outline" id="ai-logout" type="button" hidden>Sign out</button>
+          <span class="ai-status" id="ai-status" role="status">Checking TSRP AI connection…</span>
+        </div>
+        <form class="ai-chat" id="ai-form">
+          <label for="ai-question"><strong>Your question</strong></label>
+          <textarea id="ai-question" maxlength="1500" required placeholder="Ask about TSRP government roles, departments, facilities or procedures…"></textarea>
+          <button class="button button-primary" type="submit">Ask TSRP AI</button>
+          <div class="ai-answer" id="ai-answer" aria-live="polite"></div>
+        </form>
+        <p class="notice">Role-based answers require the AI API to be deployed and Discord OAuth configured. Only reviewed documents approved for your verified role can be returned.</p>
+      </div>
+    </section>
+
     <section class="dark-section" id="about">
       <div class="section">
         <div class="section-heading">
@@ -327,6 +359,68 @@
         menuButton.setAttribute('aria-expanded', 'false');
       });
     });
+
+    const AI_API_BASE = document.querySelector('meta[name="tsrp-ai-api"]').content.replace(/\\/$/, '');
+    const aiLogin = document.getElementById('ai-login');
+    const aiLogout = document.getElementById('ai-logout');
+    const aiStatus = document.getElementById('ai-status');
+    const aiForm = document.getElementById('ai-form');
+    const aiAnswer = document.getElementById('ai-answer');
+
+    aiLogin.href = AI_API_BASE + '/auth/discord';
+    async function refreshAIStatus() {
+      if (AI_API_BASE.includes('YOUR-API-HOST')) {
+        aiStatus.textContent = 'TSRP AI is not connected yet. Configure the deployed API URL to enable login.';
+        aiLogin.setAttribute('aria-disabled', 'true');
+        aiLogin.addEventListener('click', (event) => event.preventDefault(), { once: true });
+        return;
+      }
+      try {
+        const response = await fetch(AI_API_BASE + '/api/me', { credentials: 'include' });
+        const data = await response.json();
+        if (data.authenticated) {
+          aiStatus.textContent = 'Signed in as ' + data.username + '. Your Discord roles are checked when you ask a question.';
+          aiLogout.hidden = false;
+        } else {
+          aiStatus.textContent = 'Not signed in. You can ask public-information questions.';
+          aiLogout.hidden = true;
+        }
+      } catch {
+        aiStatus.textContent = 'Could not reach TSRP AI. The API may not be deployed yet.';
+      }
+    }
+
+    aiLogout.addEventListener('click', async () => {
+      try {
+        await fetch(AI_API_BASE + '/auth/logout', { method: 'POST', credentials: 'include' });
+        aiAnswer.textContent = '';
+        await refreshAIStatus();
+      } catch {
+        aiStatus.textContent = 'Sign out failed. Please try again.';
+      }
+    });
+
+    aiForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const question = document.getElementById('ai-question').value.trim();
+      if (!question) return;
+      aiAnswer.textContent = 'Thinking…';
+      try {
+        const response = await fetch(AI_API_BASE + '/api/ask', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || 'The request could not be completed.');
+        aiAnswer.textContent = data.answer || 'No answer was returned.';
+      } catch (error) {
+        aiAnswer.textContent = 'TSRP AI could not answer: ' + error.message;
+      }
+    });
+
+    refreshAIStatus();
 
     async function loadGovernmentPositions() {
       const container = document.getElementById('live-positions');

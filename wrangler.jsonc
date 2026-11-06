@@ -18,7 +18,9 @@
     }
   ],
   "vars": {
-    "AI_MODEL": "llama-3.3-70b-versatile"
+    "AI_MODEL": "llama-3.3-70b-versatile",
+    "DISCORD_REDIRECT_URI": "https://tsrp-federal-government--v2.tsrp-community.workers.dev/auth/discord/callback",
+    "WEB_POST_LOGIN_URL": "https://tsrp-federal-government--v2.tsrp-community.workers.dev/"
   },
   "observability": { "enabled": true }
 }

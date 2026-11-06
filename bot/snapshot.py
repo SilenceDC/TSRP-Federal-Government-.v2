@@ -77,7 +77,7 @@ async def on_ready():
         }
         target = Path("data/positions.json")
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(output, indent=2) + "\\n", encoding="utf-8")
+        target.write_text(json.dumps(output, indent=2) + "\n", encoding="utf-8")
         print(f"Wrote {len(positions)} government positions to {target}.")
     except Exception as exc:
         print(f"Vacancy sync failed: {type(exc).__name__}: {exc}")

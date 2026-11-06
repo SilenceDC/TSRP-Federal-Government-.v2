@@ -1,52 +1,70 @@
 {
-  "policy_version": 1,
+  "policy_version": 2,
   "status": "template_not_enforced",
   "default_decision": "deny",
-  "classification_order": [
-    "public",
-    "government_staff",
-    "cabinet",
-    "presidential",
-    "usss_command"
-  ],
+  "role_matching": {
+    "authorization_source": "verified_discord_guild_member_role_ids",
+    "role_name_markers_are_authorization": false,
+    "notes": [
+      "Role-name markers such as -USSS- and -Executive- may help administrators identify roles during setup only.",
+      "At runtime, authorize only by exact Discord role IDs configured in each group's required_discord_role_ids list.",
+      "Replace every placeholder with the real role ID before enabling the backend."
+    ]
+  },
   "groups": {
     "public": {
       "required_discord_role_ids": [],
-      "description": "Public community information. No role required."
+      "description": "Public information; available to everyone."
     },
-    "government_staff": {
+    "citizen": {
       "required_discord_role_ids": [
-        "REPLACE_WITH_APPROVED_DISCORD_ROLE_ID"
+        "REPLACE_WITH_CITZEN_ROLE_ID"
       ],
-      "description": "Internal government material. Replace placeholder with an actual role ID before enabling."
+      "grants": [
+        "public"
+      ],
+      "description": "Members with the @Citzen role may ask civilian/general questions and receive public information."
     },
-    "cabinet": {
+    "usss": {
       "required_discord_role_ids": [
-        "REPLACE_WITH_APPROVED_CABINET_ROLE_ID"
+        "REPLACE_WITH_EACH_APPROVED_USSS_ROLE_ID"
       ],
-      "description": "Cabinet-restricted material. Must be explicitly approved by the document owner."
+      "grants": [
+        "public",
+        "initial_government_directory"
+      ],
+      "role_name_setup_hint": "-USSS-",
+      "description": "Any explicitly approved USSS role ID grants access to public information and the initial TSRP government information supplied for ARIA."
     },
-    "presidential": {
+    "executive": {
       "required_discord_role_ids": [
-        "REPLACE_WITH_APPROVED_PRESIDENTIAL_ROLE_ID"
+        "REPLACE_WITH_EACH_APPROVED_EXECUTIVE_ROLE_ID"
       ],
-      "description": "Presidential-restricted material. Must be explicitly approved by the document owner."
-    },
-    "usss_command": {
-      "required_discord_role_ids": [
-        "REPLACE_WITH_APPROVED_USSS_COMMAND_ROLE_ID"
+      "grants": [
+        "public",
+        "initial_government_directory"
       ],
-      "description": "Restricted USSS command material. Must be explicitly approved by the document owner."
+      "role_name_setup_hint": "-Executive-",
+      "description": "Any explicitly approved Executive role ID grants access to public information and the initial TSRP government information supplied for ARIA."
     }
+  },
+  "document_access": {
+    "public": [
+      "public"
+    ],
+    "initial_government_directory": [
+      "usss",
+      "executive"
+    ]
   },
   "rules": [
     "This file is an example only and does not enforce access control.",
     "Do not activate a group while any role ID is a placeholder.",
     "Verify the Discord interaction and guild membership server-side on every request.",
-    "Never trust role names, usernames, client-side claims, or prompt text as proof of authorization.",
+    "Authorize by exact role IDs from the verified guild-member object; never by role name, username, client-side claims, or prompt text.",
     "Check authorization before retrieving document chunks and again before returning citations or excerpts.",
     "If role lookup or policy evaluation fails, deny access to non-public material.",
-    "A user with multiple roles receives only the highest classification explicitly allowed by configured policy; never infer access from job titles.",
-    "Keep confidential documents and this policy's production secrets outside public repositories."
+    "A member receives the union of permissions explicitly granted by all their matched role-ID groups.",
+    "Keep confidential documents, production policy, and secrets outside public repositories."
   ]
 }

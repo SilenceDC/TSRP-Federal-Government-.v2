@@ -8,38 +8,49 @@ This repository uses a free, scheduled Discord-to-website vacancy sync. It does 
 - **GitHub Actions:** starts a short-lived Python job every 5 minutes.
 - **Discord bot token:** lets that job read member roles.
 - **`data/positions.json`:** the job updates this public data file; the website reads it to display current vacancies.
-- **Groq:** may be used separately for the website AI through its free API tier, subject to Groq's current rate limits. Never expose `GROQ_API_KEY` in browser JavaScript.
+- **Groq:** powers TSRP AI through its OpenAI-compatible API. The key stays server-side.
 
 Because GitHub Actions runs on a schedule, vacancies are refreshed approximately every 5 minutes, not instantly; GitHub may delay scheduled runs during busy periods. Scheduled workflows run from the repository's default branch, so merge this setup before expecting the schedule to start. This repository is public, so standard GitHub-hosted runners are free for public repositories under GitHub's current policy. GitHub may automatically disable scheduled workflows in a public repository after 60 days without repository activity, so check Actions periodically.
 
-## One-time setup
+## Existing vacancy sync setup
 
-1. In Discord Developer Portal, enable **Server Members Intent** for the bot.
+1. In Discord Developer Portal, enable **Server Members Intent** for the vacancy bot.
 2. Invite the bot to your server with permission to view the server and members. It does not need Administrator.
 3. In GitHub, open **Settings → Secrets and variables → Actions → New repository secret** and add:
-   - `DISCORD_TOKEN` — the bot token.
-   - `GUILD_ID` — your Discord server ID (enable Developer Mode in Discord, then right-click the server and Copy Server ID).
+   - `DISCORD_TOKEN` — the vacancy bot token.
+   - `GUILD_ID` — your Discord server ID.
 4. In `bot/snapshot.py`, make sure every role name and seat capacity matches your server's actual roles.
-5. Merge this pull request into the default branch.
+5. Merge the existing vacancy-sync setup into the default branch.
 6. In GitHub, open **Settings → Pages** and select **Deploy from a branch**, choose `main` and `/ (root)`, then save. If Pages is already enabled, keep the existing configuration.
-7. Open **Actions → Sync Discord government vacancies → Run workflow** once to test the first sync. After that, the schedule runs every 5 minutes.
+7. Open **Actions → Sync Discord government vacancies → Run workflow** once to test the first sync.
 
 The workflow needs repository Actions permission to write contents. It commits only when vacancy data changes.
 
-## Website AI
+## TSRP AI
 
-The existing website is static HTML and does not currently include a secure AI backend or official-account login. To add an officials-only AI chatbot, we still need a server-side endpoint and authentication. A Groq key must be stored as a server-side secret (never in `index.html`). We should configure that separately rather than exposing the key.
+The TSRP AI foundation is in `feature/tsrp-ai-foundation`:
+
+- Discord slash command: `/ask`.
+- FastAPI website endpoint: `POST /api/ask` and health endpoint `GET /api/health`.
+- Permission-aware document retrieval and source-grounded answers.
+- A public knowledge manifest and the government overview supplied for this project.
+- A Render blueprint for separate web API and Discord worker services.
+
+See [docs/AI_SETUP.md](docs/AI_SETUP.md) for deployment and configuration. The AI services are separate from the vacancy sync and do not replace it.
 
 ## Security and privacy
 
 - Never commit bot tokens, Groq keys, or other secrets.
-- The published JSON contains role totals and vacancy counts only; it does not publish member names.
-- Do not give the bot Administrator permission.
-- If the token is exposed, reset it immediately in the Discord Developer Portal.
+- The published vacancy JSON contains role totals and vacancy counts only; it does not publish member names.
+- Do not give bots Administrator permission.
+- If a token is exposed, reset it immediately in the Discord Developer Portal.
+- This is a fictional roleplay community, not a real government agency.
+- The website AI endpoint is public-knowledge-only until Discord OAuth login and server-side role verification are implemented.
+- Never put confidential Melonly exports or restricted presidential, cabinet, or USSS documents in this public repository.
 
 ## Troubleshooting
 
-- **No workflow runs:** merge the pull request first; scheduled workflows run from the default branch.
+- **No vacancy workflow runs:** scheduled workflows run from the default branch; check Actions and repository permissions.
 - **Missing members / empty counts:** enable Server Members Intent in both the Developer Portal and the script, then verify the bot can access the server.
 - **Role says unconfigured:** the role name in `bot/snapshot.py` does not exactly match a Discord role.
 - **Website does not update:** confirm GitHub Pages is publishing the `main` branch root and check the latest workflow run.

@@ -1,0 +1,11 @@
+{
+  "description": "Division role IDs supplied for TSRP AI configuration.",
+  "authorization_note": "These are division membership/grouping roles only. They do not grant access to restricted documents. Restricted documents require explicit per-document role allowlists.",
+  "divisions": {
+    "Executive": "1561074965363560568",
+    "Cabinet": "1561075778303828190",
+    "Legislative Branch": "1561076079710576700",
+    "Judicial Branch": "1561076654170832958",
+    "USSS": "1567623961544757349"
+  }
+}

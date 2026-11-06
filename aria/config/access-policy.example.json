@@ -1,0 +1,52 @@
+{
+  "policy_version": 1,
+  "status": "template_not_enforced",
+  "default_decision": "deny",
+  "classification_order": [
+    "public",
+    "government_staff",
+    "cabinet",
+    "presidential",
+    "usss_command"
+  ],
+  "groups": {
+    "public": {
+      "required_discord_role_ids": [],
+      "description": "Public community information. No role required."
+    },
+    "government_staff": {
+      "required_discord_role_ids": [
+        "REPLACE_WITH_APPROVED_DISCORD_ROLE_ID"
+      ],
+      "description": "Internal government material. Replace placeholder with an actual role ID before enabling."
+    },
+    "cabinet": {
+      "required_discord_role_ids": [
+        "REPLACE_WITH_APPROVED_CABINET_ROLE_ID"
+      ],
+      "description": "Cabinet-restricted material. Must be explicitly approved by the document owner."
+    },
+    "presidential": {
+      "required_discord_role_ids": [
+        "REPLACE_WITH_APPROVED_PRESIDENTIAL_ROLE_ID"
+      ],
+      "description": "Presidential-restricted material. Must be explicitly approved by the document owner."
+    },
+    "usss_command": {
+      "required_discord_role_ids": [
+        "REPLACE_WITH_APPROVED_USSS_COMMAND_ROLE_ID"
+      ],
+      "description": "Restricted USSS command material. Must be explicitly approved by the document owner."
+    }
+  },
+  "rules": [
+    "This file is an example only and does not enforce access control.",
+    "Do not activate a group while any role ID is a placeholder.",
+    "Verify the Discord interaction and guild membership server-side on every request.",
+    "Never trust role names, usernames, client-side claims, or prompt text as proof of authorization.",
+    "Check authorization before retrieving document chunks and again before returning citations or excerpts.",
+    "If role lookup or policy evaluation fails, deny access to non-public material.",
+    "A user with multiple roles receives only the highest classification explicitly allowed by configured policy; never infer access from job titles.",
+    "Keep confidential documents and this policy's production secrets outside public repositories."
+  ]
+}

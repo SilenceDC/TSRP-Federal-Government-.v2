@@ -102,14 +102,25 @@ async def discord_login():
         "state": state,
         "prompt": "consent",
     }
-    return RedirectResponse("https://discord.com/oauth2/authorize?" + urlencode(params))
+    response = RedirectResponse("https://discord.com/oauth2/authorize?" + urlencode(params))
+    response.set_cookie(
+        "tsrp_ai_oauth_state",
+        state,
+        max_age=600,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        path="/auth/discord/callback",
+    )
+    return response
 
 
 @app.get("/auth/discord/callback")
 async def discord_callback(request: Request, code: str, state: str):
     client_id, client_secret, guild_id, redirect_uri = _oauth_config()
+    browser_state = request.cookies.get("tsrp_ai_oauth_state")
     expiry = _oauth_states.pop(state, None)
-    if not expiry or expiry <= time():
+    if browser_state != state or not expiry or expiry <= time():
         raise HTTPException(status_code=400, detail="Invalid or expired login state. Please try logging in again.")
 
     async with httpx.AsyncClient(timeout=10) as client:
@@ -158,6 +169,7 @@ async def discord_callback(request: Request, code: str, state: str):
         "expires_at": time() + expires_in,
     }
     response = RedirectResponse(os.getenv("WEB_POST_LOGIN_URL", "/"), status_code=303)
+    response.delete_cookie("tsrp_ai_oauth_state", path="/auth/discord/callback", secure=True, httponly=True, samesite="lax")
     response.set_cookie(
         "tsrp_ai_session",
         serializer.dumps(session_id),
@@ -176,7 +188,7 @@ async def who_am_i(request: Request):
     if not session:
         return {"authenticated": False, "divisions": []}
     _, _, guild_id, _ = _oauth_config()
-    member = await _discord_member(session["access_token"], guild_id)
+    await _discord_member(session["access_token"], guild_id)
     return {
         "authenticated": True,
         "username": session["username"],

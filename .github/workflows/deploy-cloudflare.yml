@@ -11,7 +11,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - run: npm install
       - name: Apply D1 migrations
         run: npx wrangler d1 migrations apply tsrp-ai-db --remote

@@ -284,12 +284,10 @@
         <h2>Career Opportunities</h2>
         <p>Interested in serving the TSRP community? Explore the example positions below.</p>
       </div>
-      <div class="career-list">
-        <article class="career-card"><div class="career-top"><h3>Secretary of State</h3><span class="status">EXAMPLE</span></div><p>Cabinet · Executive Branch</p></article>
-        <article class="career-card"><div class="career-top"><h3>Federal Judge</h3><span class="status">EXAMPLE</span></div><p>Judicial Branch</p></article>
-        <article class="career-card"><div class="career-top"><h3>Representative</h3><span class="status">EXAMPLE</span></div><p>Legislative Branch</p></article>
+      <div class="career-list" id="live-positions" aria-live="polite">
+        <article class="career-card"><div class="career-top"><h3>Loading positions…</h3><span class="status">SYNCING</span></div><p>Connecting to the government role tracker</p></article>
       </div>
-      <div class="notice"><strong>Demo content:</strong> These are placeholder positions, not confirmed live vacancies. Live openings can be connected to the government Discord bot in a later update.</div>
+      <div class="notice" id="positions-updated">Vacancy information is refreshed automatically from Discord approximately every 5 minutes.</div>
     </section>
 
     <section class="dark-section" id="about">
@@ -329,6 +327,60 @@
         menuButton.setAttribute('aria-expanded', 'false');
       });
     });
+
+    async function loadGovernmentPositions() {
+      const container = document.getElementById('live-positions');
+      const updated = document.getElementById('positions-updated');
+      try {
+        const response = await fetch('data/positions.json?cache=' + Date.now(), { cache: 'no-store' });
+        if (!response.ok) throw new Error('Vacancy data is not available yet.');
+        const data = await response.json();
+        if (!Array.isArray(data.positions) || data.positions.length === 0) {
+          container.textContent = 'No government positions have been published yet.';
+          return;
+        }
+
+        container.replaceChildren();
+        for (const position of data.positions) {
+          const card = document.createElement('article');
+          card.className = 'career-card';
+
+          const top = document.createElement('div');
+          top.className = 'career-top';
+
+          const title = document.createElement('h3');
+          title.textContent = position.title || 'Government position';
+
+          const status = document.createElement('span');
+          status.className = 'status';
+          if (position.status === 'unconfigured') {
+            status.textContent = 'ROLE NOT CONFIGURED';
+          } else if (Number(position.vacant) > 0) {
+            status.textContent = Number(position.vacant) + ' OPEN';
+          } else {
+            status.textContent = 'FILLED';
+          }
+
+          const details = document.createElement('p');
+          details.textContent = position.branch || '';
+
+          top.append(title, status);
+          card.append(top, details);
+          container.append(card);
+        }
+
+        if (data.updated_at) {
+          updated.textContent = 'Last updated: ' + new Date(data.updated_at).toLocaleString() +
+            ' · Refreshes approximately every 5 minutes.';
+        }
+      } catch (error) {
+        container.textContent = 'Live vacancies are temporarily unavailable. Please check back shortly.';
+        updated.textContent = error.message;
+      }
+    }
+
+    loadGovernmentPositions();
+    window.setInterval(loadGovernmentPositions, 5 * 60 * 1000);
   </script>
 </body>
 </html>

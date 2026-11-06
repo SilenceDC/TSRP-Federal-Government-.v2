@@ -372,7 +372,7 @@
       if (AI_API_BASE.includes('YOUR-API-HOST')) {
         aiStatus.textContent = 'TSRP AI is not connected yet. Configure the deployed API URL to enable login.';
         aiLogin.setAttribute('aria-disabled', 'true');
-        aiLogin.addEventListener('click', (event) => event.preventDefault(), { once: true });
+        aiLogin.addEventListener('click', (event) => event.preventDefault());
         return;
       }
       try {

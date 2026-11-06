@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "check": "node --check src/index.js && node --check scripts/register-discord-command.mjs",
     "db:create": "wrangler d1 create tsrp-ai-db",
     "db:migrate:local": "wrangler d1 migrations apply tsrp-ai-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply tsrp-ai-db --remote",

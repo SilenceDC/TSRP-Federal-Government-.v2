@@ -1,13 +1,13 @@
 # TSRP Federal Government — Cloudflare setup
 
-The public website, TSRP AI API, Discord slash-command endpoint and OAuth login are designed to run on Cloudflare Workers with static assets and D1. The existing GitHub Actions vacancy sync remains separate and unchanged. The live portal is served by the Cloudflare Worker at https://tsrp-federal-government--v2.tsrp-community.workers.dev/. The GitHub Pages URL is not the production address. The website and API use the same origin, so Discord sign-in and API requests stay on this neutral hostname.
+The public website, TSRP AI API, Discord slash-command endpoint and OAuth login are designed to run on Cloudflare Workers with static assets, D1 and the Workers AI binding. The existing GitHub Actions vacancy sync remains separate and unchanged. The live portal is served by the Cloudflare Worker at https://tsrp-federal-government--v2.tsrp-community.workers.dev/. The GitHub Pages URL is not the production address. The website and API use the same origin, so Discord sign-in and API requests stay on this neutral hostname.
 
 ## Hosting architecture
 
 - **Cloudflare Workers + Static Assets:** serves the existing website and AI API from one origin.
 - **Cloudflare D1:** stores Discord OAuth sessions, one-time login states, rate-limit counters, and any future restricted documents.
 - **Discord Interactions API:** handles /ask through signed HTTPS requests; no always-on bot process is required.
-- **Groq API:** generates source-grounded answers. Groq is a separate provider and may have its own free-tier limits or charges.
+- **Cloudflare Workers AI:** generates source-grounded answers through the Worker AI binding; a separate Groq API key is not required.
 - **GitHub Actions:** continues to run the existing vacancy snapshot job.
 
 Cloudflare currently lists a Workers Free allowance of 100,000 requests/day and a 10 ms CPU limit per request. D1 has a free tier for prototyping. Limits can change, and Groq usage is not included in Cloudflare's free tier. See [Cloudflare Workers limits](https://developers.cloudflare.com/workers/platform/limits/) and [D1 FAQ](https://developers.cloudflare.com/d1/reference/faq/).
@@ -29,7 +29,7 @@ Cloudflare currently lists a Workers Free allowance of 100,000 requests/day and 
    - **DISCORD_GUILD_ID** — the TSRP Discord server ID.
    - **DISCORD_REDIRECT_URI** — after the first deployment, set this to https://tsrp-federal-government--v2.tsrp-community.workers.dev/auth/discord/callback using your actual Worker hostname.
    - **WEB_POST_LOGIN_URL** — set this to https://tsrp-federal-government--v2.tsrp-community.workers.dev/.
-   - **AI_MODEL** — defaults to llama-3.3-70b-versatile.
+   - **AI_MODEL** — defaults to `@cf/zai-org/glm-4.7-flash` through the built-in Cloudflare Workers AI binding; no Groq key is required.
 9. In Discord Developer Portal → General Information, copy the Public Key into Worker secret DISCORD_PUBLIC_KEY.
 10. Deploy once with **npm run deploy**. The first deployment creates the workers.dev hostname. The OAuth routes will remain unconfigured until you set the remaining variables.
 11. Set DISCORD_REDIRECT_URI and WEB_POST_LOGIN_URL to the values above, then add the exact redirect URI in Discord Developer Portal → OAuth2. OAuth scopes are identify and guilds.members.read.
@@ -77,4 +77,4 @@ The GitHub Actions vacancy workflow and its DISCORD_TOKEN / GUILD_ID secrets rem
 - OAuth redirect error: the Discord Developer Portal redirect and DISCORD_REDIRECT_URI must match exactly.
 - Invalid interaction signature: copy the exact Discord application's Public Key into DISCORD_PUBLIC_KEY.
 - Slash command missing: rerun npm run discord:register with the correct application, bot token and guild IDs.
-- AI provider errors: verify the Groq key and model name. Cloudflare hosting does not include LLM inference.
+- AI provider errors: verify the Groq key and model name. Workers AI includes a daily free Neurons allocation, with additional usage subject to Cloudflare plan and model pricing.

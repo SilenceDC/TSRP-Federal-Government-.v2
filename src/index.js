@@ -211,14 +211,12 @@ async function finishDiscordLogin(request, env) {
   await env.DB.prepare("INSERT INTO sessions (session_id, access_token, refresh_token, user_id, username, expires_at) VALUES (?, ?, ?, ?, ?, ?)")
     .bind(sessionId, token.access_token, token.refresh_token || "", String(user.id), user.global_name || user.username || "Discord member", expiresAt).run();
   const destination = env.WEB_POST_LOGIN_URL || url.origin;
-  return new Response(null, {
-    status: 302,
-    headers: {
-      Location: destination,
-      "Set-Cookie": cookie("tsrp_ai_session", sessionId, Math.min(604800, Number(token.expires_in || 604800))),
-      "Cache-Control": "no-store"
-    }
-  });
+  const headers = new Headers();
+  headers.set("Location", destination);
+  headers.append("Set-Cookie", cookie("tsrp_ai_session", sessionId, Math.min(604800, Number(token.expires_in || 604800))));
+  headers.append("Set-Cookie", clearCookie("tsrp_ai_oauth_state"));
+  headers.set("Cache-Control", "no-store");
+  return new Response(null, { status: 302, headers });
 }
 
 async function handleDiscordInteraction(request, env, ctx) {

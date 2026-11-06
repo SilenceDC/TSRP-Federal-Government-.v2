@@ -16,29 +16,29 @@ Cloudflare currently lists a Workers Free allowance of 100,000 requests/day and 
 
 1. Create or sign in to a Cloudflare account.
 2. Install Node.js LTS on your computer, download this repository, and run **npm install** in its folder.
-3. Run **npm run db:create**. Cloudflare prints a D1 database ID.
-4. Replace the placeholder database_id in **wrangler.jsonc** with that exact ID.
-5. Run **npm run db:migrate:remote** to create the tables.
-6. Add Worker secrets:
+3. Run **npx wrangler login** and authorize the Cloudflare account you want to use.
+4. Run **npm run db:create**. Cloudflare prints a D1 database ID.
+5. Replace the placeholder database_id in **wrangler.jsonc** with that exact ID.
+6. Run **npm run db:migrate:remote** to create the tables.
+7. Add Worker secrets:
    - **npx wrangler secret put GROQ_API_KEY**
    - **npx wrangler secret put DISCORD_CLIENT_SECRET**
    - **npx wrangler secret put DISCORD_PUBLIC_KEY**
-   - **npx wrangler secret put DISCORD_BOT_TOKEN**
-7. Set non-secret Worker variables in Cloudflare dashboard (Worker → Settings → Variables) or wrangler.jsonc:
+8. Set non-secret Worker variables in Cloudflare dashboard (Worker → Settings → Variables) or wrangler.jsonc:
    - **DISCORD_CLIENT_ID** and **DISCORD_APPLICATION_ID** — your dedicated TSRP AI Discord application ID.
    - **DISCORD_GUILD_ID** — the TSRP Discord server ID.
    - **DISCORD_REDIRECT_URI** — after the first deployment, set this to https://YOUR-WORKER.workers.dev/auth/discord/callback using your actual Worker hostname.
    - **WEB_POST_LOGIN_URL** — after the first deployment, set this to the website URL, normally the same Worker origin.
    - **AI_MODEL** — defaults to llama-3.3-70b-versatile.
-8. In Discord Developer Portal → General Information, copy the Public Key into Worker secret DISCORD_PUBLIC_KEY.
-9. Deploy once with **npm run deploy**. The first deployment creates the workers.dev hostname. The OAuth routes will remain unconfigured until you set the remaining variables.
-10. Set DISCORD_REDIRECT_URI and WEB_POST_LOGIN_URL to the actual Worker hostname, then add the exact redirect URI in Discord Developer Portal → OAuth2. OAuth scopes are identify and guilds.members.read.
-11. Deploy again with **npm run deploy**.
-12. Register the server slash command from the project folder:
+9. In Discord Developer Portal → General Information, copy the Public Key into Worker secret DISCORD_PUBLIC_KEY.
+10. Deploy once with **npm run deploy**. The first deployment creates the workers.dev hostname. The OAuth routes will remain unconfigured until you set the remaining variables.
+11. Set DISCORD_REDIRECT_URI and WEB_POST_LOGIN_URL to the actual Worker hostname, then add the exact redirect URI in Discord Developer Portal → OAuth2. OAuth scopes are identify and guilds.members.read.
+12. Deploy again with **npm run deploy**.
+13. Register the server slash command from the project folder:
     - macOS/Linux: **DISCORD_APPLICATION_ID=... DISCORD_BOT_TOKEN=... DISCORD_GUILD_ID=... npm run discord:register**
     - Windows PowerShell: set those three environment variables first, then run **npm run discord:register**.
-13. In Discord Developer Portal → General Information, set Interactions Endpoint URL to https://YOUR-WORKER.workers.dev/discord/interactions. Save after the endpoint is deployed and responding.
-14. Test https://YOUR-WORKER.workers.dev/api/health, sign in from the website, then test /ask in the TSRP server.
+14. In Discord Developer Portal → General Information, set Interactions Endpoint URL to https://YOUR-WORKER.workers.dev/discord/interactions. Save after the endpoint is deployed and responding.
+15. Test https://YOUR-WORKER.workers.dev/api/health, sign in from the website, then test /ask in the TSRP server.
 
 For Git-based automatic deployments, connect the repository to Cloudflare Workers Builds after the first successful manual deployment. Do not commit API keys or tokens. A Cloudflare API token and account ID are needed if you instead choose to deploy from GitHub Actions.
 
@@ -46,7 +46,7 @@ For Git-based automatic deployments, connect the repository to Cloudflare Worker
 
 Use a dedicated Discord application for TSRP AI. Invite it with the applications.commands scope; it does not need Administrator or a persistent Gateway connection. Set the public key from the Developer Portal as a Worker secret. The Worker verifies Discord's Ed25519 request signature and only accepts commands from the configured TSRP guild.
 
-The slash command is registered by **scripts/register-discord-command.mjs**. The script uses the dedicated AI bot token locally; the token is not required for handling interactions once the command is registered.
+The slash command is registered by **scripts/register-discord-command.mjs**. Set DISCORD_APPLICATION_ID, DISCORD_BOT_TOKEN and DISCORD_GUILD_ID in your local terminal only when running the registration script; the bot token is not stored in Cloudflare and is not needed for handling interactions once the command is registered.
 
 ## Website and login
 

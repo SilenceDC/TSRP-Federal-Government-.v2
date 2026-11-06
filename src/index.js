@@ -133,8 +133,29 @@ async function answerQuestion(env, question, roleIds = new Set(), publicOnly = f
   if (!cleanQuestion || cleanQuestion.length > 1500) return "Please provide a question between 1 and 1,500 characters.";
   const docs = await searchKnowledge(env, cleanQuestion, roleIds, publicOnly);
   if (!docs.length) return "I couldn't find an authorized source document that answers that. The TSRP knowledge base may need the relevant reviewed document added.";
-  if (!env.GROQ_API_KEY) return "TSRP AI is connected to its knowledge base, but its language-model key is not configured yet.";
   const excerpts = docs.map((doc) => "--- SOURCE: " + doc.title + " (" + doc.path + ") ---\n" + doc.content).join("\n\n");
+  const messages = [
+    { role: "system", content: SYSTEM_PROMPT },
+    { role: "user", content: "Source excerpts:\n" + excerpts + "\n\nQuestion: " + cleanQuestion }
+  ];
+
+  // Prefer Cloudflare Workers AI: no separate provider key is required.
+  if (env.AI) {
+    const data = await env.AI.run(env.AI_MODEL || "@cf/zai-org/glm-4.7-flash", {
+      messages,
+      temperature: 0.2,
+      max_tokens: 700,
+      chat_template_kwargs: { enable_thinking: false, clear_thinking: true }
+    });
+    const answer = data?.choices?.[0]?.message?.content || data?.response || "";
+    if (answer) return answer;
+    throw new Error("Workers AI returned an empty answer. Please try again.");
+  }
+
+  // Optional compatibility fallback for accounts configured with a Groq key.
+  if (!env.GROQ_API_KEY) {
+    return "TSRP AI's built-in language model is not available. Please check the Cloudflare AI binding.";
+  }
   const response = await fetch(env.AI_BASE_URL || "https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: "Bearer " + env.GROQ_API_KEY, "content-type": "application/json" },
@@ -142,10 +163,7 @@ async function answerQuestion(env, question, roleIds = new Set(), publicOnly = f
       model: env.AI_MODEL || "llama-3.3-70b-versatile",
       temperature: 0.2,
       max_tokens: 700,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: "Source excerpts:\n" + excerpts + "\n\nQuestion: " + cleanQuestion }
-      ]
+      messages
     })
   });
   if (!response.ok) throw new Error("The AI provider request failed. Check the configured model and API key.");

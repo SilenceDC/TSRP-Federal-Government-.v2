@@ -6,6 +6,17 @@ ARIA is the planned knowledge assistant for the fictional TSRP roleplay communit
 
 This directory establishes a source-controlled, public-safe knowledge base and an example access policy. It does not yet deploy a working chatbot or connect to Melonly.
 
+### Initial access groups
+
+The first permission pass is intentionally small:
+
+- **Citizen**: members with the approved `@Citzen` role can ask civilian/general questions and receive public information.
+- **USSS**: members with any approved USSS role can receive the TSRP government information supplied for ARIA, including the initial directory/facility information, plus public information.
+- **Executive**: members with any approved Executive role can receive the TSRP government information supplied for ARIA, including the initial directory/facility information, plus public information.
+- **Everyone else**: public information only until more groups and permissions are explicitly added.
+
+The `-USSS-` and `-Executive-` text in Discord role names can be used as a setup-time hint to help an administrator sort roles into groups. It must not itself grant access. The backend must authorize using the actual Discord role IDs on the verified guild-member object. The Citizen role must also be mapped to its actual role ID. If a member has more than one approved role, their access is the union of the explicitly assigned groups.
+
 ### Knowledge sources
 
 - `knowledge/public/government-directory.md`: facts supplied for the public government directory.
@@ -33,8 +44,9 @@ This directory establishes a source-controlled, public-safe knowledge base and a
 
 - [x] Name selected: ARIA.
 - [x] Initial public government directory documented.
+- [x] Initial Citizen, USSS, and Executive permission model documented.
 - [x] Example access-policy template added.
-- [ ] Confirm exact Discord role IDs for access groups.
+- [ ] Confirm exact Discord role IDs for Citizen, USSS, and Executive groups.
 - [ ] Select and configure a private backend/hosting environment.
 - [ ] Select AI provider and store its key as a server-side secret.
 - [ ] Add Melonly export ingestion and document classification.

@@ -10,7 +10,7 @@ This repository uses a free, scheduled Discord-to-website vacancy sync. It does 
 - **`data/positions.json`:** the job updates this public data file; the website reads it to display current vacancies.
 - **Groq:** may be used separately for the website AI through its free API tier, subject to Groq's current rate limits. Never expose `GROQ_API_KEY` in browser JavaScript.
 
-Because GitHub Actions runs on a schedule, vacancies are refreshed approximately every 5 minutes, not instantly. Scheduled workflows run from the repository's default branch, so merge this setup before expecting the schedule to start. This repository is public, so standard GitHub-hosted runners are free for public repositories under GitHub's current policy.
+Because GitHub Actions runs on a schedule, vacancies are refreshed approximately every 5 minutes, not instantly; GitHub may delay scheduled runs during busy periods. Scheduled workflows run from the repository's default branch, so merge this setup before expecting the schedule to start. This repository is public, so standard GitHub-hosted runners are free for public repositories under GitHub's current policy. GitHub may automatically disable scheduled workflows in a public repository after 60 days without repository activity, so check Actions periodically.
 
 ## One-time setup
 

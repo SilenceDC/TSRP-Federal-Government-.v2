@@ -2,18 +2,6 @@ name: Deploy TSRP site and AI to Cloudflare
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "src/**"
-      - "migrations/**"
-      - "index.html"
-      - "data/**"
-      - "aria/**"
-      - "wrangler.jsonc"
-      - "package.json"
-      - ".assetsignore"
-      - ".github/workflows/deploy-cloudflare.yml"
 
 jobs:
   deploy:

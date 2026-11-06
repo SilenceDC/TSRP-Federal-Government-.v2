@@ -4,5 +4,11 @@
     "path": "data/knowledge/public/government_overview.md",
     "visibility": "public",
     "allowed_role_ids": []
+  },
+  {
+    "title": "TSRP Government Directory",
+    "path": "aria/knowledge/public/government-directory.md",
+    "visibility": "public",
+    "allowed_role_ids": []
   }
 ]

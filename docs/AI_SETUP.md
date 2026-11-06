@@ -10,11 +10,13 @@ TSRP AI is being added as a separate service so the existing static website and 
 
 ## Required secrets and environment
 Set these in the hosting provider's secret/environment settings. Never commit real values:
-- `DISCORD_TOKEN`: Discord bot token for the AI bot. It can be the existing bot token only if you intentionally want both processes to share the same bot account; preferably create a dedicated bot application.
+- `TSRP_AI_DISCORD_TOKEN`: token for a dedicated TSRP AI Discord bot application. Keep it separate from the vacancy snapshot bot token.
 - `GROQ_API_KEY`: Groq API key used server-side.
 - `AI_MODEL` (optional): defaults to `llama-3.3-70b-versatile`.
 - `AI_BASE_URL` (optional): defaults to Groq's OpenAI-compatible API.
 - `WEB_ALLOWED_ORIGINS`: comma-separated website origins allowed to call the API, e.g. the GitHub Pages origin.
+
+The AI bot needs permission to use application commands in the server. It does not need Administrator permission or the privileged Members intent for the current role-check implementation.
 
 ## Deployment
 The included `render.yaml` defines separate web and worker services. Connect the repository to Render, configure the secret values when prompted, and deploy. The website API is not live until the web service is deployed and its public URL is configured in the static website frontend.

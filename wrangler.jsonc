@@ -1,8 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tsrp-federal-government",
+  "name": "tsrp-federal-government--v2",
   "main": "src/index.js",
   "compatibility_date": "2026-11-06",
+  "workers_dev": true,
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
@@ -11,7 +12,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "tsrp-ai-db",
+      "database_name": "tsrp-goverment-db",
       "database_id": "051e83fe-a844-4528-968f-8df28d45da8b",
       "migrations_dir": "migrations"
     }

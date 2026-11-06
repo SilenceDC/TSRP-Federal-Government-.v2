@@ -302,8 +302,8 @@ export default {
       ) {
         const html = await assetResponse.text();
         const cleanHtml = html.replace(
-          /<meta name="tsrp-ai-api" content="[^"]*">\s*/i,
-          ""
+          /<meta name="tsrp-ai-api" content="[^"]*">/i,
+          '<meta name="tsrp-ai-api" content="https://tsrp-federal-government--v2.tsrp-community.workers.dev">'
         );
         const headers = new Headers(assetResponse.headers);
         headers.delete("content-length");

@@ -360,7 +360,7 @@
       });
     });
 
-    const AI_API_BASE = document.querySelector('meta[name="tsrp-ai-api"]').content.replace(/\\/$/, '');
+    const AI_API_BASE = document.querySelector('meta[name="tsrp-ai-api"]').content.replace(/\/$/, '');
     const aiLogin = document.getElementById('ai-login');
     const aiLogout = document.getElementById('ai-logout');
     const aiStatus = document.getElementById('ai-status');

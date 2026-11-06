@@ -27,18 +27,18 @@ Cloudflare currently lists a Workers Free allowance of 100,000 requests/day and 
 8. Set non-secret Worker variables in Cloudflare dashboard (Worker → Settings → Variables) or wrangler.jsonc:
    - **DISCORD_CLIENT_ID** and **DISCORD_APPLICATION_ID** — your dedicated TSRP AI Discord application ID.
    - **DISCORD_GUILD_ID** — the TSRP Discord server ID.
-   - **DISCORD_REDIRECT_URI** — after the first deployment, set this to https://YOUR-WORKER.workers.dev/auth/discord/callback using your actual Worker hostname.
-   - **WEB_POST_LOGIN_URL** — after the first deployment, set this to the website URL, normally the same Worker origin.
+   - **DISCORD_REDIRECT_URI** — after the first deployment, set this to https://tsrp-federal-government--v2.tsrp-community.workers.dev/auth/discord/callback using your actual Worker hostname.
+   - **WEB_POST_LOGIN_URL** — set this to https://tsrp-federal-government--v2.tsrp-community.workers.dev/.
    - **AI_MODEL** — defaults to llama-3.3-70b-versatile.
 9. In Discord Developer Portal → General Information, copy the Public Key into Worker secret DISCORD_PUBLIC_KEY.
 10. Deploy once with **npm run deploy**. The first deployment creates the workers.dev hostname. The OAuth routes will remain unconfigured until you set the remaining variables.
-11. Set DISCORD_REDIRECT_URI and WEB_POST_LOGIN_URL to the actual Worker hostname, then add the exact redirect URI in Discord Developer Portal → OAuth2. OAuth scopes are identify and guilds.members.read.
+11. Set DISCORD_REDIRECT_URI and WEB_POST_LOGIN_URL to the values above, then add the exact redirect URI in Discord Developer Portal → OAuth2. OAuth scopes are identify and guilds.members.read.
 12. Deploy again with **npm run deploy**.
 13. Register the server slash command from the project folder:
     - macOS/Linux: **DISCORD_APPLICATION_ID=... DISCORD_BOT_TOKEN=... DISCORD_GUILD_ID=... npm run discord:register**
     - Windows PowerShell: set those three environment variables first, then run **npm run discord:register**.
-14. In Discord Developer Portal → General Information, set Interactions Endpoint URL to https://YOUR-WORKER.workers.dev/discord/interactions. Save after the endpoint is deployed and responding.
-15. Test https://YOUR-WORKER.workers.dev/api/health, sign in from the website, then test /ask in the TSRP server.
+14. In Discord Developer Portal → General Information, set Interactions Endpoint URL to https://tsrp-federal-government--v2.tsrp-community.workers.dev/discord/interactions. Save after the endpoint is deployed and responding.
+15. Test https://tsrp-federal-government--v2.tsrp-community.workers.dev/api/health, sign in from the website, then test /ask in the TSRP server.
 
 For Git-based automatic deployments, connect the repository to Cloudflare Workers Builds after the first successful manual deployment. Do not commit API keys or tokens. A Cloudflare API token and account ID are needed if you instead choose to deploy from GitHub Actions.
 

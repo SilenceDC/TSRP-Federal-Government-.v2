@@ -1,6 +1,6 @@
 # TSRP Federal Government — Cloudflare setup
 
-The public website, TSRP AI API, Discord slash-command endpoint and OAuth login are designed to run on Cloudflare Workers with static assets and D1. The existing GitHub Actions vacancy sync remains separate and unchanged.
+The public website, TSRP AI API, Discord slash-command endpoint and OAuth login are designed to run on Cloudflare Workers with static assets and D1. The existing GitHub Actions vacancy sync remains separate and unchanged. The Worker serves a Cloudflare-hosted copy of the site at its workers.dev URL; the existing GitHub Pages address will not automatically move to Cloudflare. Use the Worker URL (or attach a custom domain to it) for the integrated AI experience.
 
 ## Hosting architecture
 

@@ -28,15 +28,15 @@ The workflow needs repository Actions permission to write contents. It commits o
 
 ## TSRP AI
 
-The TSRP AI foundation is in `feature/tsrp-ai-foundation`:
+The TSRP AI foundation is merged into `main`; the Discord role-access upgrade is proposed in `feature/tsrp-discord-role-access`:
 
 - Discord slash command: `/ask`.
-- FastAPI website endpoint: `POST /api/ask` and health endpoint `GET /api/health`.
+- FastAPI website endpoint: `POST /api/ask`, health endpoint `GET /api/health`, and Discord OAuth identity endpoint `GET /api/me`.
 - Permission-aware document retrieval and source-grounded answers.
 - A public knowledge manifest and the government overview supplied for this project.
 - A Render blueprint for separate web API and Discord worker services.
 
-See [docs/AI_SETUP.md](docs/AI_SETUP.md) for deployment and configuration. The AI services are separate from the vacancy sync and do not replace it.
+See [docs/AI_SETUP.md](docs/AI_SETUP.md) for deployment and configuration, including Discord OAuth and the website AI chat. The AI services are separate from the vacancy sync and do not replace it.
 
 ## Security and privacy
 
@@ -45,7 +45,7 @@ See [docs/AI_SETUP.md](docs/AI_SETUP.md) for deployment and configuration. The A
 - Do not give bots Administrator permission.
 - If a token is exposed, reset it immediately in the Discord Developer Portal.
 - This is a fictional roleplay community, not a real government agency.
-- The website AI endpoint is public-knowledge-only until Discord OAuth login and server-side role verification are implemented.
+- Website AI role access requires the Discord OAuth configuration described in `docs/AI_SETUP.md`; until it is configured, anonymous requests remain public-only.
 - Never put confidential Melonly exports or restricted presidential, cabinet, or USSS documents in this public repository.
 
 ## Troubleshooting

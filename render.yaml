@@ -10,6 +10,18 @@ services:
         sync: false
       - key: WEB_ALLOWED_ORIGINS
         sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
+      - key: DISCORD_GUILD_ID
+        sync: false
+      - key: DISCORD_REDIRECT_URI
+        sync: false
+      - key: WEB_POST_LOGIN_URL
+        sync: false
       - key: AI_MODEL
         value: llama-3.3-70b-versatile
   - type: worker

@@ -10,10 +10,9 @@ from urllib.parse import urlencode
 import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from itsdangerous import BadSignature, URLSafeTimedSerializer
-from starlette.middleware.sessions import SessionMiddleware
 
 from tsrp_ai.answer import answer_question
 

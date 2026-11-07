@@ -43,10 +43,22 @@ async function verifyDiscordRequest(request, body, publicKey) {
 }
 
 async function discordMember(accessToken, guildId) {
+  if (!guildId) throw new Error("Discord server ID is not configured. Set DISCORD_GUILD_ID in the Cloudflare Worker variables.");
   const response = await fetch("https://discord.com/api/v10/users/@me/guilds/" + guildId + "/member", {
     headers: { Authorization: "Bearer " + accessToken }
   });
-  if (!response.ok) throw new Error("Discord could not verify your current server membership. Please sign in again.");
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error("Discord could not find your membership in the configured server. Check that DISCORD_GUILD_ID is the TSRP server ID and that this Discord account has joined that server.");
+    }
+    if (response.status === 401) {
+      throw new Error("Discord rejected the login token. Sign in again and approve the guilds.members.read permission.");
+    }
+    if (response.status === 403) {
+      throw new Error("Discord denied the membership check. Sign in again and approve the guilds.members.read permission.");
+    }
+    throw new Error("Discord membership verification failed (HTTP " + response.status + "). Please try again later.");
+  }
   return response.json();
 }
 

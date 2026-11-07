@@ -1,0 +1,1 @@
+ALTER TABLE sessions ADD COLUMN member_retry_after INTEGER NOT NULL DEFAULT 0;

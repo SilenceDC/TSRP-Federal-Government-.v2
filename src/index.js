@@ -117,7 +117,7 @@ async function refreshSession(env, session) {
 async function getSession(request, env) {
   const sessionId = cookieValue(request, "tsrp_ai_session");
   if (!sessionId || !/^[0-9a-f]{64}$/.test(sessionId)) return null;
-  const session = await env.DB.prepare("SELECT session_id, access_token, refresh_token, user_id, username, expires_at, member_roles_json, member_verified_at, member_guild_id FROM sessions WHERE session_id = ?")
+  const session = await env.DB.prepare("SELECT session_id, access_token, refresh_token, user_id, username, expires_at, member_roles_json, member_verified_at, member_guild_id, member_retry_after FROM sessions WHERE session_id = ?")
     .bind(sessionId).first();
   if (!session) return null;
   const refreshed = await refreshSession(env, session);
@@ -138,6 +138,15 @@ async function getAuthorizedMember(request, env) {
   const now = Math.floor(Date.now() / 1000);
   const verifiedAt = Number(session.member_verified_at || 0);
   const cacheAge = now - verifiedAt;
+  const retryUntil = Number(session.member_retry_after || 0);
+  if (retryUntil > now) {
+    const retryAfter = retryUntil - now;
+    const error = new Error("Discord is temporarily rate-limiting the server membership check. Please wait " +
+      retryAfter + " seconds before trying again.");
+    error.status = 429;
+    error.retryAfter = retryAfter;
+    throw error;
+  }
   if (
     guildId &&
     String(session.member_guild_id || "") === guildId &&
@@ -153,11 +162,18 @@ async function getAuthorizedMember(request, env) {
   try {
     const member = await discordMember(session.access_token, guildId);
     const roles = (member.roles || []).map(String);
-    await env.DB.prepare("UPDATE sessions SET member_roles_json = ?, member_verified_at = ?, member_guild_id = ? WHERE session_id = ?")
+    await env.DB.prepare("UPDATE sessions SET member_roles_json = ?, member_verified_at = ?, member_guild_id = ?, member_retry_after = 0 WHERE session_id = ?")
       .bind(JSON.stringify(roles), now, guildId, session.session_id).run();
     return { session, roleIds: new Set(roles) };
   } catch (error) {
     // A rate limit or Discord outage must never erase a valid local login session.
+    if (Number(error?.status || 0) === 429) {
+      const retryAfter = Math.max(1, Number(error.retryAfter || 5));
+      await env.DB.prepare("UPDATE sessions SET member_retry_after = ? WHERE session_id = ?")
+        .bind(now + retryAfter, session.session_id).run();
+      error.retryAfter = retryAfter;
+      throw error;
+    }
     if ([401, 403, 404].includes(Number(error?.status || 0))) {
       await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(session.session_id).run();
       return null;

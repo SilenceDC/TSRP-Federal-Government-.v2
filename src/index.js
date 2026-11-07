@@ -333,9 +333,12 @@ export default {
           if (!userResponse.ok) throw new Error("Discord profile could not be verified.");
           const user = await userResponse.json();
           const displayName = user.global_name || user.username;
+          const avatarUrl = user.avatar
+            ? "https://cdn.discordapp.com/avatars/" + user.id + "/" + user.avatar + "." + (user.avatar.startsWith("a_") ? "gif" : "png") + "?size=128"
+            : "https://cdn.discordapp.com/embed/avatars/" + (Number((BigInt(user.id) >> 22n) % 6n)) + ".png";
           await env.DB.prepare("UPDATE sessions SET username = ? WHERE session_id = ?")
             .bind(displayName, session.session_id).run();
-          return json({ authenticated: true, username: user.username, display_name: displayName });
+          return json({ authenticated: true, username: user.username, display_name: displayName, avatar_url: avatarUrl });
         } catch {
           await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(session.session_id).run();
           return json({ authenticated: false, divisions: [] });

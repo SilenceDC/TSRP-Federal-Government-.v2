@@ -72,6 +72,7 @@
     }
     .header-account-link:hover, .header-account button:hover { border-color: var(--gold); color: var(--gold); }
     .header-profile { display: flex; align-items: center; gap: 9px; color: white; }
+    .header-profile[hidden] { display: none; }
     .header-avatar {
       width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%;
       background: var(--gold); color: var(--navy); font-size: 13px; font-weight: 900;
@@ -462,7 +463,13 @@
           headerProfile.hidden = true;
         }
       } catch {
-        aiStatus.textContent = 'Could not reach TSRP AI. The API may not be deployed yet.';
+        isAuthenticated = false;
+        headerProfile.hidden = true;
+        headerLogin.hidden = false;
+        aiLogout.hidden = true;
+        aiLogin.hidden = false;
+        conversationTools.hidden = true;
+        aiStatus.textContent = 'Could not verify your Discord session. The API may be unavailable; you are not shown as signed in.';
       }
     }
 

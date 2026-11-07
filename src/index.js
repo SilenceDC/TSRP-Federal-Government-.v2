@@ -43,23 +43,38 @@ async function verifyDiscordRequest(request, body, publicKey) {
 }
 
 async function discordMember(accessToken, guildId) {
-  if (!guildId) throw new Error("Discord server ID is not configured. Set DISCORD_GUILD_ID in the Cloudflare Worker variables.");
-  const response = await fetch("https://discord.com/api/v10/users/@me/guilds/" + guildId + "/member", {
+  if (!guildId) {
+    const error = new Error("Discord server ID is not configured. Set DISCORD_GUILD_ID in the Cloudflare Worker variables.");
+    error.status = 500;
+    throw error;
+  }
+  const response = await fetch("https://discord.com/api/v10/users/@me/guilds/" + encodeURIComponent(guildId) + "/member", {
     headers: { Authorization: "Bearer " + accessToken }
   });
   if (!response.ok) {
+    let message;
     if (response.status === 404) {
-      throw new Error("Discord could not find your membership in the configured server. Check that DISCORD_GUILD_ID is the TSRP server ID and that this Discord account has joined that server.");
+      message = "Discord could not find your membership in the configured server. Check that DISCORD_GUILD_ID is the TSRP server ID and that this Discord account has joined that server.";
+    } else if (response.status === 401) {
+      message = "Discord rejected the login token. Sign in again and approve the guilds.members.read permission.";
+    } else if (response.status === 403) {
+      message = "Discord denied the membership check. Sign in again and approve the guilds.members.read permission.";
+    } else {
+      message = "Discord membership verification failed (HTTP " + response.status + "). Please try again later.";
     }
-    if (response.status === 401) {
-      throw new Error("Discord rejected the login token. Sign in again and approve the guilds.members.read permission.");
-    }
-    if (response.status === 403) {
-      throw new Error("Discord denied the membership check. Sign in again and approve the guilds.members.read permission.");
-    }
-    throw new Error("Discord membership verification failed (HTTP " + response.status + "). Please try again later.");
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
   return response.json();
+}
+
+function discordAvatarUrl(user) {
+  if (!user?.id || !user?.avatar) return null;
+  const avatarHash = String(user.avatar);
+  const extension = avatarHash.startsWith("a_") ? "gif" : "png";
+  return "https://cdn.discordapp.com/avatars/" + encodeURIComponent(String(user.id)) + "/" +
+    encodeURIComponent(avatarHash) + "." + extension + "?size=96";
 }
 
 async function refreshSession(env, session) {
@@ -262,8 +277,13 @@ async function finishDiscordLogin(request, env) {
   const userResponse = await fetch("https://discord.com/api/v10/users/@me", { headers: { Authorization: "Bearer " + token.access_token } });
   if (!userResponse.ok) return json({ detail: "Discord could not identify your account." }, 401);
   const user = await userResponse.json();
-  try { await discordMember(token.access_token, env.DISCORD_GUILD_ID); }
-  catch { return json({ detail: "You must be a member of the TSRP Discord server to sign in." }, 403); }
+  try {
+    await discordMember(token.access_token, env.DISCORD_GUILD_ID);
+  } catch (error) {
+    const status = Number(error?.status || 0);
+    const detail = error instanceof Error ? error.message : "Discord membership verification failed. Please try again.";
+    return json({ detail }, [401, 403, 404].includes(status) ? 403 : 503);
+  }
 
   const sessionId = randomToken(32);
   const expiresAt = Math.floor(Date.now() / 1000) + Number(token.expires_in || 604800);
@@ -342,15 +362,30 @@ export default {
           const userResponse = await fetch("https://discord.com/api/v10/users/@me", {
             headers: { Authorization: "Bearer " + session.access_token }
           });
-          if (!userResponse.ok) throw new Error("Discord profile could not be verified.");
+          if (!userResponse.ok) {
+            const error = new Error("Discord profile verification failed (HTTP " + userResponse.status + "). Please sign in again.");
+            error.status = userResponse.status;
+            throw error;
+          }
           const user = await userResponse.json();
           const displayName = user.global_name || user.username;
           await env.DB.prepare("UPDATE sessions SET username = ? WHERE session_id = ?")
             .bind(displayName, session.session_id).run();
-          return json({ authenticated: true, username: user.username, display_name: displayName });
-        } catch {
-          await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(session.session_id).run();
-          return json({ authenticated: false, divisions: [] });
+          return json({
+            authenticated: true,
+            username: user.username,
+            display_name: displayName,
+            avatar_url: discordAvatarUrl(user)
+          });
+        } catch (error) {
+          const status = Number(error?.status || 0);
+          if ([401, 403, 404].includes(status)) {
+            await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(session.session_id).run();
+          }
+          const detail = [401, 403, 404].includes(status)
+            ? (error instanceof Error ? error.message : "Discord session verification failed. Please sign in again.")
+            : "Discord could not verify your session due to a temporary service error. Please try again.";
+          return json({ authenticated: false, divisions: [], detail }, [401, 403, 404].includes(status) ? 403 : 503);
         }
       }
       if (url.pathname === "/auth/logout" && request.method === "POST") {

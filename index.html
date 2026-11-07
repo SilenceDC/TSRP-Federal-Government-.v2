@@ -467,12 +467,35 @@
     }
 
     async function signOutOfAI() {
+      const logoutButtons = [aiLogout, headerLogout];
+      logoutButtons.forEach((button) => { button.disabled = true; });
       try {
-        await fetch(AI_API_BASE + '/auth/logout', { method: 'POST', credentials: 'include' });
-        aiAnswer.textContent = '';
+        const response = await fetch(AI_API_BASE + '/auth/logout', {
+          method: 'POST',
+          credentials: 'include',
+          cache: 'no-store'
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.ok !== true) {
+          throw new Error(data.detail || 'The server did not confirm sign out.');
+        }
+
+        isAuthenticated = false;
+        activeConversationId = null;
+        conversationTools.hidden = true;
+        conversationList.replaceChildren();
+        aiAnswer.replaceChildren();
+        aiAnswer.classList.remove('has-history');
         await refreshAIStatus();
-      } catch {
-        aiStatus.textContent = 'Sign out failed. Please try again.';
+        if (isAuthenticated) {
+          aiStatus.textContent = 'The server accepted sign out, but your session is still active. Please try again.';
+        } else {
+          aiStatus.textContent = 'Signed out successfully.';
+        }
+      } catch (error) {
+        aiStatus.textContent = 'Sign out failed: ' + error.message;
+      } finally {
+        logoutButtons.forEach((button) => { button.disabled = false; });
       }
     }
     newConversationButton.addEventListener('click', createConversation);

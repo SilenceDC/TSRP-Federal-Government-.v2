@@ -27,8 +27,8 @@ const cookieValue = (request, name) => {
   const part = (request.headers.get("Cookie") || "").split(";").map((x) => x.trim()).find((x) => x.startsWith(name + "="));
   return part ? decodeURIComponent(part.slice(name.length + 1)) : "";
 };
-const cookie = (name, value, maxAge) => name + "=" + encodeURIComponent(value) + "; Path=/; Max-Age=" + maxAge + "; HttpOnly; Secure; SameSite=Lax";
-const clearCookie = (name) => name + "=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax";
+const cookie = (name, value, maxAge, sameSite = "Lax") => name + "=" + encodeURIComponent(value) + "; Path=/; Max-Age=" + maxAge + "; HttpOnly; Secure; SameSite=" + sameSite;
+const clearCookie = (name, sameSite = "Lax") => name + "=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=" + sameSite;
 
 async function verifyDiscordRequest(request, body, publicKey) {
   const signature = request.headers.get("X-Signature-Ed25519");
@@ -260,7 +260,7 @@ async function finishDiscordLogin(request, env) {
   const destination = env.WEB_POST_LOGIN_URL || url.origin;
   const headers = new Headers();
   headers.set("Location", destination);
-  headers.append("Set-Cookie", cookie("tsrp_ai_session", sessionId, Math.min(604800, Number(token.expires_in || 604800))));
+  headers.append("Set-Cookie", cookie("tsrp_ai_session", sessionId, Math.min(604800, Number(token.expires_in || 604800)), "None"));
   headers.append("Set-Cookie", clearCookie("tsrp_ai_oauth_state"));
   headers.set("Cache-Control", "no-store");
   return new Response(null, { status: 302, headers });
@@ -336,7 +336,7 @@ export default {
       if (url.pathname === "/auth/logout" && request.method === "POST") {
         const sessionId = cookieValue(request, "tsrp_ai_session");
         if (/^[0-9a-f]{64}$/.test(sessionId)) await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(sessionId).run();
-        return json({ ok: true }, 200, { "Set-Cookie": clearCookie("tsrp_ai_session") });
+        return json({ ok: true }, 200, { "Set-Cookie": clearCookie("tsrp_ai_session", "None") });
       }
       if (url.pathname === "/api/conversations" && request.method === "GET") {
         const auth = await getAuthorizedMember(request, env);

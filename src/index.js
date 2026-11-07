@@ -97,7 +97,7 @@ async function getAuthorizedMember(request, env) {
 }
 
 function conversationTitle(question) {
-  const title = String(question || "").replace(/\\s+/g, " ").trim();
+  const title = String(question || "").replace(/\s+/g, " ").trim();
   return title.length > 60 ? title.slice(0, 57) + "…" : (title || "New conversation");
 }
 
@@ -303,7 +303,7 @@ export default {
       request.method === "OPTIONS" &&
       origin === CORS_ORIGIN &&
       (["/api/ask", "/api/me", "/api/conversations", "/auth/logout"].includes(url.pathname) ||
-        /^\\/api\\/conversations\\/[0-9a-f]{32}\\/messages$/.test(url.pathname))
+        /^\/api\/conversations\/[0-9a-f]{32}\/messages$/.test(url.pathname))
     ) {
       return new Response(null, {
         status: 204,
@@ -356,7 +356,7 @@ export default {
         ).bind(conversationId, auth.session.user_id, now, now).run();
         return json({ conversation: { conversation_id: conversationId, title: "New conversation", created_at: now, updated_at: now } }, 201);
       }
-      const conversationMessagesMatch = url.pathname.match(/^\\/api\\/conversations\\/([0-9a-f]{32})\\/messages$/);
+      const conversationMessagesMatch = url.pathname.match(/^\/api\/conversations\/([0-9a-f]{32})\/messages$/);
       if (conversationMessagesMatch && (request.method === "GET" || request.method === "POST")) {
         const auth = await getAuthorizedMember(request, env);
         if (!auth) return json({ detail: "Sign in with Discord to access conversation history." }, 401);

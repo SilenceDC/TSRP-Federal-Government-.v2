@@ -74,9 +74,11 @@
     .header-profile { display: flex; align-items: center; gap: 9px; color: white; }
     .header-profile[hidden] { display: none; }
     .header-avatar {
-      width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%;
-      background: var(--gold); color: var(--navy); font-size: 13px; font-weight: 900;
+      width: 34px; height: 34px; display: grid; place-items: center; flex: 0 0 34px;
+      overflow: hidden; border-radius: 50%; background: var(--gold);
+      color: var(--navy); font-size: 13px; font-weight: 900;
     }
+    .header-avatar-image { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
     .header-profile-copy { display: grid; line-height: 1.25; }
     .header-profile-name { max-width: 145px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 800; }
     .header-profile-state { color: #b8d9c7; font-size: 10px; }
@@ -251,7 +253,10 @@
       <div class="header-account" aria-label="Discord account">
         <a class="header-account-link" id="header-login" href="#">Sign in</a>
         <div class="header-profile" id="header-profile" hidden>
-          <span class="header-avatar" id="header-avatar" aria-hidden="true">D</span>
+          <span class="header-avatar" id="header-avatar" aria-hidden="true">
+            <img class="header-avatar-image" id="header-avatar-image" alt="" hidden>
+            <span id="header-avatar-fallback">D</span>
+          </span>
           <span class="header-profile-copy">
             <span class="header-profile-name" id="header-profile-name">Discord member</span>
             <span class="header-profile-state">● Signed in · session remembered</span>
@@ -415,6 +420,8 @@
     const headerProfile = document.getElementById('header-profile');
     const headerProfileName = document.getElementById('header-profile-name');
     const headerAvatar = document.getElementById('header-avatar');
+    const headerAvatarImage = document.getElementById('header-avatar-image');
+    const headerAvatarFallback = document.getElementById('header-avatar-fallback');
     const headerLogout = document.getElementById('header-logout');
     const aiStatus = document.getElementById('ai-status');
     const aiForm = document.getElementById('ai-form');
@@ -448,7 +455,21 @@
           headerLogin.hidden = true;
           headerProfile.hidden = false;
           headerProfileName.textContent = username;
-          headerAvatar.textContent = Array.from(username.trim())[0]?.toUpperCase() || 'D';
+          headerAvatarFallback.textContent = Array.from(username.trim())[0]?.toUpperCase() || 'D';
+          const avatarUrl = typeof data.avatar_url === 'string' ? data.avatar_url : '';
+          headerAvatarImage.onerror = () => {
+            headerAvatarImage.hidden = true;
+            headerAvatarFallback.hidden = false;
+          };
+          if (avatarUrl) {
+            headerAvatarImage.src = avatarUrl;
+            headerAvatarImage.hidden = false;
+            headerAvatarFallback.hidden = true;
+          } else {
+            headerAvatarImage.hidden = true;
+            headerAvatarImage.removeAttribute('src');
+            headerAvatarFallback.hidden = false;
+          }
         } else {
           isAuthenticated = false;
           activeConversationId = null;
@@ -456,11 +477,14 @@
           conversationList.replaceChildren();
           aiAnswer.replaceChildren();
           aiAnswer.classList.remove('has-history');
-          aiStatus.textContent = 'Not signed in. You can ask public-information questions.';
+          aiStatus.textContent = data.detail || 'Not signed in. You can ask public-information questions.';
           aiLogout.hidden = true;
           aiLogin.hidden = false;
           headerLogin.hidden = false;
           headerProfile.hidden = true;
+          headerAvatarImage.hidden = true;
+          headerAvatarImage.removeAttribute('src');
+          headerAvatarFallback.hidden = false;
         }
       } catch {
         isAuthenticated = false;

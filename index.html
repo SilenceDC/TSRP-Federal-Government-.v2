@@ -441,7 +441,7 @@
           isAuthenticated = true;
           conversationTools.hidden = false;
           loadConversations();
-          const username = data.username || 'Discord member';
+          const username = data.display_name || data.username || 'Discord user';
           aiStatus.textContent = 'Signed in as ' + username + '. Your Discord roles are checked when you ask a question.';
           aiLogout.hidden = false;
           aiLogin.hidden = true;

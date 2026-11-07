@@ -70,11 +70,19 @@ async function discordMember(accessToken, guildId) {
 }
 
 function discordAvatarUrl(user) {
-  if (!user?.id || !user?.avatar) return null;
-  const avatarHash = String(user.avatar);
-  const extension = avatarHash.startsWith("a_") ? "gif" : "png";
-  return "https://cdn.discordapp.com/avatars/" + encodeURIComponent(String(user.id)) + "/" +
-    encodeURIComponent(avatarHash) + "." + extension + "?size=96";
+  if (!user?.id) return null;
+  const userId = String(user.id);
+  if (user.avatar) {
+    const avatarHash = String(user.avatar);
+    const extension = avatarHash.startsWith("a_") ? "gif" : "png";
+    return "https://cdn.discordapp.com/avatars/" + encodeURIComponent(userId) + "/" +
+      encodeURIComponent(avatarHash) + "." + extension + "?size=96";
+  }
+  const discriminator = String(user.discriminator || "0");
+  const defaultIndex = discriminator !== "0" && discriminator !== "0000"
+    ? Number(discriminator) % 5
+    : Number((BigInt(userId) >> 22n) % 6n);
+  return "https://cdn.discordapp.com/embed/avatars/" + defaultIndex + ".png";
 }
 
 async function refreshSession(env, session) {

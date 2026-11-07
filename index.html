@@ -173,6 +173,19 @@
     .ai-chat textarea { width: 100%; min-height: 100px; resize: vertical; padding: 13px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
     .ai-answer { min-height: 70px; padding: 16px; border-radius: 8px; background: #f4f6f9; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
     .ai-answer:empty { display: none; }
+    .conversation-tools { display: grid; gap: 10px; margin: 0 0 18px; }
+    .conversation-tools[hidden] { display: none; }
+    .conversation-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .conversation-toolbar strong { color: var(--navy); font-size: 13px; }
+    .conversation-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .conversation-list button { max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; background: #f7f8fa; color: var(--ink); font: inherit; font-size: 11px; cursor: pointer; }
+    .conversation-list button[aria-current="true"] { border-color: var(--gold-dark); background: #f5f0e5; }
+    .conversation-list button:disabled { opacity: .6; cursor: wait; }
+    .ai-answer.has-history { display: grid; gap: 12px; background: #f4f6f9; }
+    .chat-message { padding: 12px 14px; border-radius: 8px; background: white; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .chat-message.user { border-left: 3px solid var(--gold-dark); }
+    .chat-message.assistant { border-left: 3px solid var(--green); }
+    .chat-message strong { display: block; margin-bottom: 4px; color: var(--navy); font-size: 11px; }
     .ai-chat button { cursor: pointer; }
     .notice {
       margin-top: 18px; padding: 13px 16px; border-left: 3px solid var(--gold);
@@ -339,6 +352,13 @@
           <button class="button button-outline" id="ai-logout" type="button" hidden>Sign out</button>
           <span class="ai-status" id="ai-status" role="status">Checking TSRP AI connection…</span>
         </div>
+        <div class="conversation-tools" id="conversation-tools" hidden>
+          <div class="conversation-toolbar">
+            <strong>Saved conversations</strong>
+            <button class="button button-primary" id="new-conversation" type="button">New chat</button>
+          </div>
+          <div class="conversation-list" id="conversation-list" aria-label="Your saved conversations"></div>
+        </div>
         <form class="ai-chat" id="ai-form">
           <label for="ai-question"><strong>Your question</strong></label>
           <textarea id="ai-question" maxlength="1500" required placeholder="Ask about TSRP government roles, departments, facilities or procedures…"></textarea>
@@ -398,6 +418,11 @@
     const aiStatus = document.getElementById('ai-status');
     const aiForm = document.getElementById('ai-form');
     const aiAnswer = document.getElementById('ai-answer');
+    const conversationTools = document.getElementById('conversation-tools');
+    const conversationList = document.getElementById('conversation-list');
+    const newConversationButton = document.getElementById('new-conversation');
+    let activeConversationId = null;
+    let isAuthenticated = false;
 
     aiLogin.href = AI_API_BASE + '/auth/discord';
     headerLogin.href = AI_API_BASE + '/auth/discord';
@@ -412,6 +437,9 @@
         const response = await fetch(AI_API_BASE + '/api/me', { credentials: 'include' });
         const data = await response.json();
         if (data.authenticated) {
+          isAuthenticated = true;
+          conversationTools.hidden = false;
+          loadConversations();
           const username = data.username || 'Discord member';
           aiStatus.textContent = 'Signed in as ' + username + '. Your Discord roles are checked when you ask a question.';
           aiLogout.hidden = false;
@@ -421,6 +449,12 @@
           headerProfileName.textContent = username;
           headerAvatar.textContent = Array.from(username.trim())[0]?.toUpperCase() || 'D';
         } else {
+          isAuthenticated = false;
+          activeConversationId = null;
+          conversationTools.hidden = true;
+          conversationList.replaceChildren();
+          aiAnswer.replaceChildren();
+          aiAnswer.classList.remove('has-history');
           aiStatus.textContent = 'Not signed in. You can ask public-information questions.';
           aiLogout.hidden = true;
           aiLogin.hidden = false;
@@ -441,26 +475,112 @@
         aiStatus.textContent = 'Sign out failed. Please try again.';
       }
     }
+    newConversationButton.addEventListener('click', createConversation);
     aiLogout.addEventListener('click', signOutOfAI);
     headerLogout.addEventListener('click', signOutOfAI);
+
+    function renderConversationMessages(messages) {
+      aiAnswer.replaceChildren();
+      aiAnswer.classList.add('has-history');
+      for (const message of messages) {
+        const item = document.createElement('div');
+        item.className = 'chat-message ' + (message.role === 'user' ? 'user' : 'assistant');
+        const label = document.createElement('strong');
+        label.textContent = message.role === 'user' ? 'You' : 'Aria';
+        const content = document.createElement('span');
+        content.textContent = message.content || '';
+        item.append(label, content);
+        aiAnswer.append(item);
+      }
+      aiAnswer.scrollTop = aiAnswer.scrollHeight;
+    }
+
+    async function loadConversations(selectLatest = true) {
+      if (!isAuthenticated) return;
+      try {
+        const response = await fetch(AI_API_BASE + '/api/conversations', { credentials: 'include' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || 'Could not load saved conversations.');
+        conversationList.replaceChildren();
+        const conversations = data.conversations || [];
+        for (const conversation of conversations) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = conversation.title || 'New conversation';
+          button.title = button.textContent;
+          button.setAttribute('aria-current', String(conversation.conversation_id === activeConversationId));
+          button.addEventListener('click', () => openConversation(conversation.conversation_id));
+          conversationList.append(button);
+        }
+        if (selectLatest && conversations.length && !activeConversationId) {
+          await openConversation(conversations[0].conversation_id);
+        } else if (!conversations.length && selectLatest && !activeConversationId) {
+          await createConversation();
+        }
+      } catch (error) {
+        aiStatus.textContent = error.message;
+      }
+    }
+
+    async function openConversation(conversationId) {
+      activeConversationId = conversationId;
+      const response = await fetch(AI_API_BASE + '/api/conversations/' + conversationId + '/messages', { credentials: 'include' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Could not open this conversation.');
+      renderConversationMessages(data.messages || []);
+      await loadConversations(false);
+    }
+
+    async function createConversation() {
+      const response = await fetch(AI_API_BASE + '/api/conversations', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: '{}'
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Could not create a new conversation.');
+      activeConversationId = data.conversation.conversation_id;
+      renderConversationMessages([]);
+      await loadConversations(false);
+    }
 
     aiForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       const question = document.getElementById('ai-question').value.trim();
       if (!question) return;
-      aiAnswer.textContent = 'Thinking…';
+      const submitButton = aiForm.querySelector('button[type="submit"]');
+      submitButton.disabled = true;
       try {
-        const response = await fetch(AI_API_BASE + '/api/ask', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question })
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.detail || 'The request could not be completed.');
-        aiAnswer.textContent = data.answer || 'No answer was returned.';
+        if (isAuthenticated) {
+          if (!activeConversationId) await createConversation();
+          const response = await fetch(AI_API_BASE + '/api/conversations/' + activeConversationId + '/messages', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question })
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.detail || 'The request could not be completed.');
+          const current = await fetch(AI_API_BASE + '/api/conversations/' + activeConversationId + '/messages', { credentials: 'include' });
+          const history = await current.json();
+          if (!current.ok) throw new Error(history.detail || 'The answer was saved, but the conversation could not be refreshed.');
+          renderConversationMessages(history.messages || []);
+          await loadConversations(false);
+        } else {
+          aiAnswer.classList.remove('has-history');
+          aiAnswer.textContent = 'Thinking…';
+          const response = await fetch(AI_API_BASE + '/api/ask', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question })
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.detail || 'The request could not be completed.');
+          aiAnswer.textContent = data.answer || 'No answer was returned.';
+        }
+        document.getElementById('ai-question').value = '';
       } catch (error) {
+        aiAnswer.classList.remove('has-history');
         aiAnswer.textContent = 'TSRP AI could not answer: ' + error.message;
+      } finally {
+        submitButton.disabled = false;
       }
     });
 

@@ -327,7 +327,15 @@ export default {
         if (!session) return json({ authenticated: false, divisions: [] });
         try {
           await discordMember(session.access_token, env.DISCORD_GUILD_ID);
-          return json({ authenticated: true, username: session.username });
+          const userResponse = await fetch("https://discord.com/api/v10/users/@me", {
+            headers: { Authorization: "Bearer " + session.access_token }
+          });
+          if (!userResponse.ok) throw new Error("Discord profile could not be verified.");
+          const user = await userResponse.json();
+          const displayName = user.global_name || user.username;
+          await env.DB.prepare("UPDATE sessions SET username = ? WHERE session_id = ?")
+            .bind(displayName, session.session_id).run();
+          return json({ authenticated: true, username: user.username, display_name: displayName });
         } catch {
           await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(session.session_id).run();
           return json({ authenticated: false, divisions: [] });

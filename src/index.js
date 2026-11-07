@@ -404,14 +404,14 @@ export default {
       request.method === "OPTIONS" &&
       origin === CORS_ORIGIN &&
       (["/api/ask", "/api/me", "/api/conversations", "/auth/logout"].includes(url.pathname) ||
-        /^\/api\/conversations\/[0-9a-f]{32}\/messages$/.test(url.pathname))
+        /^\/api\/conversations\/[0-9a-f]{32}(?:\/messages)?$/.test(url.pathname))
     ) {
       return new Response(null, {
         status: 204,
         headers: {
           "access-control-allow-origin": CORS_ORIGIN,
           "access-control-allow-credentials": "true",
-          "access-control-allow-methods": "GET, POST, OPTIONS",
+          "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
           "access-control-allow-headers": "Content-Type",
           "access-control-max-age": "86400",
           "vary": "Origin"
@@ -492,6 +492,23 @@ export default {
           "INSERT INTO conversations (conversation_id, user_id, title, created_at, updated_at) VALUES (?, ?, 'New conversation', ?, ?)"
         ).bind(conversationId, auth.session.user_id, now, now).run();
         return json({ conversation: { conversation_id: conversationId, title: "New conversation", created_at: now, updated_at: now } }, 201);
+      }
+      const conversationDeleteMatch = url.pathname.match(/^\/api\/conversations\/([0-9a-f]{32})$/);
+      if (conversationDeleteMatch && request.method === "DELETE") {
+        const auth = await getAuthorizedMember(request, env);
+        if (!auth) return json({ detail: "Sign in with Discord to delete a conversation." }, 401);
+        const conversationId = conversationDeleteMatch[1];
+        const conversation = await env.DB.prepare(
+          "SELECT conversation_id FROM conversations WHERE conversation_id = ? AND user_id = ?"
+        ).bind(conversationId, auth.session.user_id).first();
+        if (!conversation) return json({ detail: "Conversation not found." }, 404);
+        await env.DB.batch([
+          env.DB.prepare("DELETE FROM messages WHERE conversation_id = ? AND user_id = ?")
+            .bind(conversationId, auth.session.user_id),
+          env.DB.prepare("DELETE FROM conversations WHERE conversation_id = ? AND user_id = ?")
+            .bind(conversationId, auth.session.user_id)
+        ]);
+        return json({ ok: true, conversation_id: conversationId });
       }
       const conversationMessagesMatch = url.pathname.match(/^\/api\/conversations\/([0-9a-f]{32})\/messages$/);
       if (conversationMessagesMatch && (request.method === "GET" || request.method === "POST")) {

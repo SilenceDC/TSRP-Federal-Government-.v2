@@ -181,9 +181,13 @@
     .conversation-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .conversation-toolbar strong { color: var(--navy); font-size: 13px; }
     .conversation-list { display: flex; flex-wrap: wrap; gap: 8px; }
-    .conversation-list button { max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; background: #f7f8fa; color: var(--ink); font: inherit; font-size: 11px; cursor: pointer; }
-    .conversation-list button[aria-current="true"] { border-color: var(--gold-dark); background: #f5f0e5; }
-    .conversation-list button:disabled { opacity: .6; cursor: wait; }
+    .conversation-item { display: flex; min-width: 0; max-width: 100%; align-items: stretch; overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: #f7f8fa; }
+    .conversation-item button { min-width: 0; padding: 7px 10px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 11px; cursor: pointer; }
+    .conversation-item .conversation-open { max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+    .conversation-item .conversation-open[aria-current="true"] { background: #f5f0e5; font-weight: 700; }
+    .conversation-item .conversation-delete { flex: 0 0 auto; border-left: 1px solid var(--line); color: #8a3434; }
+    .conversation-item button:disabled { opacity: .6; cursor: wait; }
+    .conversation-item .conversation-delete:hover { background: #f8eaea; }
     .ai-answer.has-history { display: grid; gap: 12px; background: #f4f6f9; }
     .chat-message { padding: 12px 14px; border-radius: 8px; background: white; white-space: pre-wrap; overflow-wrap: anywhere; }
     .chat-message.user { border-left: 3px solid var(--gold-dark); }
@@ -551,13 +555,26 @@
         conversationList.replaceChildren();
         const conversations = data.conversations || [];
         for (const conversation of conversations) {
-          const button = document.createElement('button');
-          button.type = 'button';
-          button.textContent = conversation.title || 'New conversation';
-          button.title = button.textContent;
-          button.setAttribute('aria-current', String(conversation.conversation_id === activeConversationId));
-          button.addEventListener('click', () => openConversation(conversation.conversation_id));
-          conversationList.append(button);
+          const item = document.createElement('div');
+          item.className = 'conversation-item';
+
+          const openButton = document.createElement('button');
+          openButton.type = 'button';
+          openButton.className = 'conversation-open';
+          openButton.textContent = conversation.title || 'New conversation';
+          openButton.title = openButton.textContent;
+          openButton.setAttribute('aria-current', String(conversation.conversation_id === activeConversationId));
+          openButton.addEventListener('click', () => openConversation(conversation.conversation_id));
+
+          const deleteButton = document.createElement('button');
+          deleteButton.type = 'button';
+          deleteButton.className = 'conversation-delete';
+          deleteButton.textContent = 'Delete';
+          deleteButton.setAttribute('aria-label', 'Delete conversation: ' + (conversation.title || 'New conversation'));
+          deleteButton.addEventListener('click', () => deleteConversation(conversation.conversation_id, deleteButton));
+
+          item.append(openButton, deleteButton);
+          conversationList.append(item);
         }
         if (selectLatest && conversations.length && !activeConversationId) {
           await openConversation(conversations[0].conversation_id);
@@ -566,6 +583,35 @@
         }
       } catch (error) {
         aiStatus.textContent = error.message;
+      }
+    }
+
+    async function deleteConversation(conversationId, deleteButton) {
+      const confirmed = window.confirm('Delete this conversation and all of its messages? This cannot be undone.');
+      if (!confirmed) return;
+
+      deleteButton.disabled = true;
+      try {
+        const response = await fetch(AI_API_BASE + '/api/conversations/' + conversationId, {
+          method: 'DELETE',
+          credentials: 'include',
+          cache: 'no-store'
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.ok !== true) {
+          throw new Error(data.detail || 'Could not delete this conversation.');
+        }
+
+        if (activeConversationId === conversationId) {
+          activeConversationId = null;
+          aiAnswer.replaceChildren();
+          aiAnswer.classList.remove('has-history');
+        }
+        aiStatus.textContent = 'Conversation deleted.';
+        await loadConversations(true);
+      } catch (error) {
+        aiStatus.textContent = 'Delete failed: ' + error.message;
+        deleteButton.disabled = false;
       }
     }
 

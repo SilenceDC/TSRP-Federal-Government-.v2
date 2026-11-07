@@ -258,6 +258,74 @@ function formatGovernmentDirectoryAnswer(docs) {
   return lines.join("\n");
 }
 
+function isGovernmentVacancyRequest(value) {
+  const text = String(value || "").toLowerCase();
+  return /\b(vacanc(?:y|ies)|open positions?|positions? (?:are )?open|available positions?|currently filled|filled positions?|who is hiring|what(?:'s| is) open)\b/.test(text) ||
+    (/\b(government|goverment|federal|cabinet|executive branch|legislative branch|judicial branch)\b/.test(text) &&
+     /\b(open|available|vacant|filled|hiring|positions?|roles?)\b/.test(text));
+}
+
+async function fetchLiveGovernmentVacancies() {
+  const response = await fetch(
+    "https://raw.githubusercontent.com/SilenceDC/TSRP-Federal-Government-.v2/main/data/positions.json",
+    { headers: { "accept": "application/json", "cache-control": "no-cache" } }
+  );
+  if (!response.ok) throw new Error("The live government vacancy feed is unavailable (HTTP " + response.status + ").");
+  const snapshot = await response.json();
+  if (!snapshot || !Array.isArray(snapshot.positions) || !snapshot.updated_at) {
+    throw new Error("The live government vacancy feed returned invalid data.");
+  }
+  const updatedAt = Date.parse(snapshot.updated_at);
+  if (!Number.isFinite(updatedAt) || Date.now() - updatedAt > 15 * 60 * 1000 || updatedAt > Date.now() + 60 * 1000) {
+    throw new Error("The live government vacancy feed is out of date. Please try again after the next Discord sync.");
+  }
+  return snapshot;
+}
+
+function formatGovernmentVacancyAnswer(snapshot) {
+  const groups = new Map();
+  let totalVacancies = 0;
+  let totalFilled = 0;
+  const unconfigured = [];
+  for (const position of snapshot.positions) {
+    const title = String(position.title || "").trim();
+    const branch = String(position.branch || "Other").trim();
+    const capacity = Math.max(0, Number(position.capacity) || 0);
+    const filled = Math.max(0, Number(position.filled) || 0);
+    const vacant = Math.max(0, Number(position.vacant) || 0);
+    if (!title) continue;
+    if (position.role_found === false || position.status === "unconfigured") {
+      unconfigured.push(title);
+      continue;
+    }
+    totalFilled += filled;
+    totalVacancies += vacant;
+    if (vacant <= 0) continue;
+    if (!groups.has(branch)) groups.set(branch, []);
+    groups.get(branch).push("- **" + title + "** — " + vacant + " open of " + capacity + " seat" + (capacity === 1 ? "" : "s"));
+  }
+  const lines = [
+    "**Currently open TSRP government positions**",
+    totalVacancies + " open seat" + (totalVacancies === 1 ? "" : "s") + " across " +
+      Array.from(groups.values()).reduce((sum, entries) => sum + entries.length, 0) +
+      " role title" + (Array.from(groups.values()).reduce((sum, entries) => sum + entries.length, 0) === 1 ? "" : "s") +
+      ". " + totalFilled + " seat" + (totalFilled === 1 ? " is" : "s are") + " filled.",
+    ""
+  ];
+  if (groups.size) {
+    for (const [branch, entries] of groups) lines.push("**" + branch + "**", ...entries, "");
+  } else {
+    lines.push("There are currently no configured vacant seats.");
+  }
+  if (unconfigured.length) {
+    lines.push("Not included because the matching Discord roles are not configured: " + unconfigured.join(", ") + ".");
+  }
+  lines.push("Last Discord role sync: " + new Date(snapshot.updated_at).toISOString().replace("T", " ").replace(/\.\d{3}Z$/, " UTC") + ".");
+  lines.push("This feed reports seat counts, not the names of members holding positions.");
+  lines.push("[Source: Live TSRP Government Vacancy Snapshot]");
+  return lines.join("\n");
+}
+
 async function searchKnowledge(env, question, roleIds, publicOnly) {
   const rawManifest = await fetchKnowledgeAssets(env, "data/knowledge/manifest.json");
   let manifest;
@@ -314,6 +382,15 @@ async function answerQuestion(env, question, roleIds = new Set(), publicOnly = f
   const intentContext = recentUserContext + " " + cleanQuestion;
   // Short follow-ups like "yes please" inherit the topic from recent user messages,
   // so retrieve against that context rather than the two-word reply alone.
+  if (isGovernmentVacancyRequest(intentContext)) {
+    try {
+      const snapshot = await fetchLiveGovernmentVacancies();
+      return formatGovernmentVacancyAnswer(snapshot);
+    } catch (error) {
+      return "I can't verify current government vacancies right now because the live Discord vacancy feed is unavailable or stale. I won't guess based on the role directory. " +
+        (error.message || "Please try again shortly.");
+    }
+  }
   const retrievalQuestion = isGovernmentRosterRequest(intentContext)
     ? intentContext + " government directory role titles positions"
     : intentContext;
@@ -496,6 +573,14 @@ export default {
     try {
       if (url.pathname === "/discord/interactions" && request.method === "POST") return handleDiscordInteraction(request, env, ctx);
       if (url.pathname === "/api/health" && request.method === "GET") return json({ ok: true, service: "TSRP AI Cloudflare Worker", version: "1.0.0" });
+      if (url.pathname === "/api/vacancies" && request.method === "GET") {
+        try {
+          const snapshot = await fetchLiveGovernmentVacancies();
+          return json({ ...snapshot, source: "Live TSRP Government Vacancy Snapshot" });
+        } catch (error) {
+          return json({ detail: error.message || "Live government vacancy data is unavailable." }, 503);
+        }
+      }
       if (url.pathname === "/auth/discord" && request.method === "GET") return startDiscordLogin(request, env);
       if (url.pathname === "/auth/discord/callback" && request.method === "GET") return finishDiscordLogin(request, env);
       if (url.pathname === "/api/me" && request.method === "GET") {

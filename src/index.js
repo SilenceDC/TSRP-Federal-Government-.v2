@@ -6,8 +6,16 @@ const SYSTEM_PROMPT = [
   "Cite supporting documents as [Source: title]. Never imply TSRP is a real government agency."
 ].join(" ");
 
+const CORS_ORIGIN = "https://silencedc.github.io";
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), {
-  status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...headers }
+  status, headers: {
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": "no-store",
+    "access-control-allow-origin": CORS_ORIGIN,
+    "access-control-allow-credentials": "true",
+    "vary": "Origin",
+    ...headers
+  }
 });
 const hexToBytes = (hex) => Uint8Array.from((hex.match(/.{1,2}/g) || []).map((byte) => parseInt(byte, 16)));
 const randomToken = (bytes = 32) => {
@@ -269,6 +277,24 @@ async function handleDiscordInteraction(request, env, ctx) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const origin = request.headers.get("Origin") || "";
+    if (
+      request.method === "OPTIONS" &&
+      origin === CORS_ORIGIN &&
+      ["/api/ask", "/api/me", "/auth/logout"].includes(url.pathname)
+    ) {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "access-control-allow-origin": CORS_ORIGIN,
+          "access-control-allow-credentials": "true",
+          "access-control-allow-methods": "GET, POST, OPTIONS",
+          "access-control-allow-headers": "Content-Type",
+          "access-control-max-age": "86400",
+          "vary": "Origin"
+        }
+      });
+    }
     try {
       if (url.pathname === "/discord/interactions" && request.method === "POST") return handleDiscordInteraction(request, env, ctx);
       if (url.pathname === "/api/health" && request.method === "GET") return json({ ok: true, service: "TSRP AI Cloudflare Worker", version: "1.0.0" });

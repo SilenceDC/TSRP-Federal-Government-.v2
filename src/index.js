@@ -302,7 +302,8 @@ export default {
     if (
       request.method === "OPTIONS" &&
       origin === CORS_ORIGIN &&
-      ["/api/ask", "/api/me", "/auth/logout"].includes(url.pathname)
+      (["/api/ask", "/api/me", "/api/conversations", "/auth/logout"].includes(url.pathname) ||
+        /^\\/api\\/conversations\\/[0-9a-f]{32}\\/messages$/.test(url.pathname))
     ) {
       return new Response(null, {
         status: 204,

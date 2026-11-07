@@ -229,7 +229,7 @@ function extractDirectoryGroups(content, rootHeading) {
 
 function isGovernmentRosterRequest(value) {
   const text = String(value || "").toLowerCase();
-  const governmentContext = /\b(government|gov|federal|cabinet|executive branch|legislative branch|judicial branch)\b/.test(text);
+  const governmentContext = /\b(governments?|goverments?|gov|federal|cabinet|executive branch|legislative branch|judicial branch)\b/.test(text);
   const rosterIntent = /\b(roster|positions?|roles?|role titles|officeholders?|office holders|who works|staff list)\b/.test(text);
   return governmentContext && rosterIntent;
 }

@@ -84,6 +84,23 @@ async function getSession(request, env) {
   return refreshed;
 }
 
+async function getAuthorizedMember(request, env) {
+  const session = await getSession(request, env);
+  if (!session) return null;
+  try {
+    const member = await discordMember(session.access_token, env.DISCORD_GUILD_ID);
+    return { session, roleIds: new Set((member.roles || []).map(String)) };
+  } catch {
+    await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(session.session_id).run();
+    return null;
+  }
+}
+
+function conversationTitle(question) {
+  const title = String(question || "").replace(/\s+/g, " ").trim();
+  return title.length > 60 ? title.slice(0, 57) + "…" : (title || "New conversation");
+}
+
 async function fetchKnowledgeAssets(env, path) {
   const safePath = String(path || "").replace(/^\/+/, "");
   if (!safePath || safePath.split("/").includes("..")) return "";
@@ -136,7 +153,7 @@ async function searchKnowledge(env, question, roleIds, publicOnly) {
   return matches.slice(0, 4);
 }
 
-async function answerQuestion(env, question, roleIds = new Set(), publicOnly = false) {
+async function answerQuestion(env, question, roleIds = new Set(), publicOnly = false, conversationHistory = []) {
   const cleanQuestion = String(question || "").trim();
   if (!cleanQuestion || cleanQuestion.length > 1500) return "Please provide a question between 1 and 1,500 characters.";
   const docs = await searchKnowledge(env, cleanQuestion, roleIds, publicOnly);
@@ -144,6 +161,10 @@ async function answerQuestion(env, question, roleIds = new Set(), publicOnly = f
   const excerpts = docs.map((doc) => "--- SOURCE: " + doc.title + " (" + doc.path + ") ---\n" + doc.content).join("\n\n");
   const messages = [
     { role: "system", content: SYSTEM_PROMPT },
+    ...conversationHistory.slice(-12).map((message) => ({
+      role: message.role === "assistant" ? "assistant" : "user",
+      content: String(message.content || "").slice(0, 4000)
+    })),
     { role: "user", content: "Source excerpts:\n" + excerpts + "\n\nQuestion: " + cleanQuestion }
   ];
 
@@ -281,7 +302,8 @@ export default {
     if (
       request.method === "OPTIONS" &&
       origin === CORS_ORIGIN &&
-      ["/api/ask", "/api/me", "/auth/logout"].includes(url.pathname)
+      (["/api/ask", "/api/me", "/api/conversations", "/auth/logout"].includes(url.pathname) ||
+        /^\/api\/conversations\/[0-9a-f]{32}\/messages$/.test(url.pathname))
     ) {
       return new Response(null, {
         status: 204,
@@ -315,6 +337,69 @@ export default {
         const sessionId = cookieValue(request, "tsrp_ai_session");
         if (/^[0-9a-f]{64}$/.test(sessionId)) await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(sessionId).run();
         return json({ ok: true }, 200, { "Set-Cookie": clearCookie("tsrp_ai_session") });
+      }
+      if (url.pathname === "/api/conversations" && request.method === "GET") {
+        const auth = await getAuthorizedMember(request, env);
+        if (!auth) return json({ detail: "Sign in with Discord to access conversation history." }, 401);
+        const result = await env.DB.prepare(
+          "SELECT conversation_id, title, created_at, updated_at FROM conversations WHERE user_id = ? ORDER BY updated_at DESC LIMIT 50"
+        ).bind(auth.session.user_id).all();
+        return json({ conversations: result.results || [] });
+      }
+      if (url.pathname === "/api/conversations" && request.method === "POST") {
+        const auth = await getAuthorizedMember(request, env);
+        if (!auth) return json({ detail: "Sign in with Discord to create a conversation." }, 401);
+        const conversationId = randomToken(16);
+        const now = Math.floor(Date.now() / 1000);
+        await env.DB.prepare(
+          "INSERT INTO conversations (conversation_id, user_id, title, created_at, updated_at) VALUES (?, ?, 'New conversation', ?, ?)"
+        ).bind(conversationId, auth.session.user_id, now, now).run();
+        return json({ conversation: { conversation_id: conversationId, title: "New conversation", created_at: now, updated_at: now } }, 201);
+      }
+      const conversationMessagesMatch = url.pathname.match(/^\/api\/conversations\/([0-9a-f]{32})\/messages$/);
+      if (conversationMessagesMatch && (request.method === "GET" || request.method === "POST")) {
+        const auth = await getAuthorizedMember(request, env);
+        if (!auth) return json({ detail: "Sign in with Discord to access conversation history." }, 401);
+        const conversationId = conversationMessagesMatch[1];
+        const conversation = await env.DB.prepare(
+          "SELECT conversation_id, title FROM conversations WHERE conversation_id = ? AND user_id = ?"
+        ).bind(conversationId, auth.session.user_id).first();
+        if (!conversation) return json({ detail: "Conversation not found." }, 404);
+        if (request.method === "GET") {
+          const result = await env.DB.prepare(
+            "SELECT message_id, role, content, created_at FROM messages WHERE conversation_id = ? AND user_id = ? ORDER BY created_at ASC, rowid ASC"
+          ).bind(conversationId, auth.session.user_id).all();
+          return json({ conversation, messages: result.results || [] });
+        }
+        let body;
+        try { body = await request.json(); } catch { return json({ detail: "Request body must be JSON." }, 400); }
+        const question = String(body.question || "").trim();
+        if (!question || question.length > 1500) return json({ detail: "Question must be between 1 and 1,500 characters." }, 400);
+        if (!(await checkRateLimit(env, "web:user:" + auth.session.user_id))) {
+          return json({ detail: "Rate limit reached. Try again shortly." }, 429);
+        }
+        const historyResult = await env.DB.prepare(
+          "SELECT role, content FROM messages WHERE conversation_id = ? AND user_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 12"
+        ).bind(conversationId, auth.session.user_id).all();
+        const history = (historyResult.results || []).reverse();
+        const answer = await answerQuestion(env, question, auth.roleIds, false, history);
+        const now = Math.floor(Date.now() / 1000);
+        const userMessageId = randomToken(16);
+        const assistantMessageId = randomToken(16);
+        const nextTitle = conversation.title === "New conversation" ? conversationTitle(question) : conversation.title;
+        await env.DB.batch([
+          env.DB.prepare("INSERT INTO messages (message_id, conversation_id, user_id, role, content, created_at) VALUES (?, ?, ?, 'user', ?, ?)").bind(userMessageId, conversationId, auth.session.user_id, question, now),
+          env.DB.prepare("INSERT INTO messages (message_id, conversation_id, user_id, role, content, created_at) VALUES (?, ?, ?, 'assistant', ?, ?)").bind(assistantMessageId, conversationId, auth.session.user_id, answer, now + 1),
+          env.DB.prepare("UPDATE conversations SET title = ?, updated_at = ? WHERE conversation_id = ? AND user_id = ?").bind(nextTitle, now + 1, conversationId, auth.session.user_id)
+        ]);
+        return json({
+          answer,
+          conversation: { conversation_id: conversationId, title: nextTitle },
+          messages: [
+            { message_id: userMessageId, role: "user", content: question, created_at: now },
+            { message_id: assistantMessageId, role: "assistant", content: answer, created_at: now + 1 }
+          ]
+        });
       }
       if (url.pathname === "/api/ask" && request.method === "POST") {
         const ip = request.headers.get("CF-Connecting-IP") || "unknown";

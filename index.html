@@ -250,7 +250,7 @@
         <a href="#tsrp-ai">TSRP AI</a>
         <a href="#about">About</a>
       </nav>
-      <div class="header-account" aria-label="Discord account">
+      <div class="header-account" id="top-account" aria-label="Discord account">
         <a class="header-account-link" id="header-login" href="#">Sign in</a>
         <div class="header-profile" id="header-profile" hidden>
           <span class="header-avatar" id="header-avatar" aria-hidden="true">
@@ -354,8 +354,7 @@
       </div>
       <div class="ai-panel">
         <div class="ai-auth">
-          <a class="button button-primary" id="ai-login" href="#">Sign in with Discord</a>
-          <button class="button button-outline" id="ai-logout" type="button" hidden>Sign out</button>
+          <a class="button button-primary" id="ai-login" href="#top-account">Sign in at the top of the page</a>
           <span class="ai-status" id="ai-status" role="status">Checking TSRP AI connection…</span>
         </div>
         <div class="conversation-tools" id="conversation-tools" hidden>
@@ -415,7 +414,6 @@
 
     const AI_API_BASE = document.querySelector('meta[name="tsrp-ai-api"]')?.content || window.location.origin;
     const aiLogin = document.getElementById('ai-login');
-    const aiLogout = document.getElementById('ai-logout');
     const headerLogin = document.getElementById('header-login');
     const headerProfile = document.getElementById('header-profile');
     const headerProfileName = document.getElementById('header-profile-name');
@@ -431,7 +429,7 @@
     let activeConversationId = null;
     let isAuthenticated = false;
 
-    aiLogin.href = AI_API_BASE + '/auth/discord';
+    aiLogin.href = '#top-account';
     headerLogin.href = AI_API_BASE + '/auth/discord';
     async function refreshAIStatus() {
       if (AI_API_BASE.includes('YOUR-API-HOST')) {
@@ -449,7 +447,6 @@
           loadConversations();
           const username = data.display_name || data.username || 'Discord user';
           aiStatus.textContent = 'Signed in as ' + username + '. Your Discord roles are checked when you ask a question.';
-          aiLogout.hidden = false;
           aiLogin.hidden = true;
           headerLogin.hidden = true;
           headerProfile.hidden = false;
@@ -477,7 +474,6 @@
           aiAnswer.replaceChildren();
           aiAnswer.classList.remove('has-history');
           aiStatus.textContent = data.detail || 'Not signed in. You can ask public-information questions.';
-          aiLogout.hidden = true;
           aiLogin.hidden = false;
           headerLogin.hidden = false;
           headerProfile.hidden = true;
@@ -489,7 +485,6 @@
         isAuthenticated = false;
         headerProfile.hidden = true;
         headerLogin.hidden = false;
-        aiLogout.hidden = true;
         aiLogin.hidden = false;
         conversationTools.hidden = true;
         aiStatus.textContent = 'Could not verify your Discord session. The API may be unavailable; you are not shown as signed in.';
@@ -497,7 +492,7 @@
     }
 
     async function signOutOfAI() {
-      const logoutButtons = [aiLogout, headerLogout];
+      const logoutButtons = [headerLogout];
       logoutButtons.forEach((button) => { button.disabled = true; });
       try {
         const response = await fetch(AI_API_BASE + '/auth/logout', {
@@ -529,7 +524,6 @@
       }
     }
     newConversationButton.addEventListener('click', createConversation);
-    aiLogout.addEventListener('click', signOutOfAI);
     headerLogout.addEventListener('click', signOutOfAI);
 
     function renderConversationMessages(messages) {

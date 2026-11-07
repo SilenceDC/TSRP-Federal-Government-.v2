@@ -53,7 +53,15 @@ async function discordMember(accessToken, guildId) {
   });
   if (!response.ok) {
     let message;
-    if (response.status === 404) {
+    let retryAfter = 0;
+    if (response.status === 429) {
+      const rateLimit = await response.json().catch(() => ({}));
+      retryAfter = Number(rateLimit.retry_after || response.headers.get("Retry-After") ||
+        response.headers.get("X-RateLimit-Reset-After") || 5);
+      retryAfter = Number.isFinite(retryAfter) && retryAfter > 0 ? Math.ceil(retryAfter) : 5;
+      message = "Discord is temporarily rate-limiting the server membership check. Please wait " +
+        retryAfter + " seconds before trying again.";
+    } else if (response.status === 404) {
       message = "Discord could not find your membership in the configured server. Check that DISCORD_GUILD_ID is the TSRP server ID and that this Discord account has joined that server.";
     } else if (response.status === 401) {
       message = "Discord rejected the login token. Sign in again and approve the guilds.members.read permission.";
@@ -64,6 +72,7 @@ async function discordMember(accessToken, guildId) {
     }
     const error = new Error(message);
     error.status = response.status;
+    if (response.status === 429) error.retryAfter = retryAfter;
     throw error;
   }
   return response.json();
@@ -108,7 +117,7 @@ async function refreshSession(env, session) {
 async function getSession(request, env) {
   const sessionId = cookieValue(request, "tsrp_ai_session");
   if (!sessionId || !/^[0-9a-f]{64}$/.test(sessionId)) return null;
-  const session = await env.DB.prepare("SELECT session_id, access_token, refresh_token, user_id, username, expires_at FROM sessions WHERE session_id = ?")
+  const session = await env.DB.prepare("SELECT session_id, access_token, refresh_token, user_id, username, expires_at, member_roles_json, member_verified_at, member_guild_id FROM sessions WHERE session_id = ?")
     .bind(sessionId).first();
   if (!session) return null;
   const refreshed = await refreshSession(env, session);
@@ -119,15 +128,41 @@ async function getSession(request, env) {
   return refreshed;
 }
 
+const DISCORD_MEMBER_CACHE_SECONDS = 300;
+
 async function getAuthorizedMember(request, env) {
   const session = await getSession(request, env);
   if (!session) return null;
+
+  const guildId = String(env.DISCORD_GUILD_ID || "");
+  const now = Math.floor(Date.now() / 1000);
+  const verifiedAt = Number(session.member_verified_at || 0);
+  const cacheAge = now - verifiedAt;
+  if (
+    guildId &&
+    String(session.member_guild_id || "") === guildId &&
+    verifiedAt > 0 &&
+    cacheAge >= 0 &&
+    cacheAge < DISCORD_MEMBER_CACHE_SECONDS
+  ) {
+    let roles = [];
+    try { roles = JSON.parse(session.member_roles_json || "[]"); } catch { roles = []; }
+    return { session, roleIds: new Set(Array.isArray(roles) ? roles.map(String) : []) };
+  }
+
   try {
-    const member = await discordMember(session.access_token, env.DISCORD_GUILD_ID);
-    return { session, roleIds: new Set((member.roles || []).map(String)) };
-  } catch {
-    await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(session.session_id).run();
-    return null;
+    const member = await discordMember(session.access_token, guildId);
+    const roles = (member.roles || []).map(String);
+    await env.DB.prepare("UPDATE sessions SET member_roles_json = ?, member_verified_at = ?, member_guild_id = ? WHERE session_id = ?")
+      .bind(JSON.stringify(roles), now, guildId, session.session_id).run();
+    return { session, roleIds: new Set(roles) };
+  } catch (error) {
+    // A rate limit or Discord outage must never erase a valid local login session.
+    if ([401, 403, 404].includes(Number(error?.status || 0))) {
+      await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(session.session_id).run();
+      return null;
+    }
+    throw error;
   }
 }
 
@@ -285,18 +320,23 @@ async function finishDiscordLogin(request, env) {
   const userResponse = await fetch("https://discord.com/api/v10/users/@me", { headers: { Authorization: "Bearer " + token.access_token } });
   if (!userResponse.ok) return json({ detail: "Discord could not identify your account." }, 401);
   const user = await userResponse.json();
+  let member;
   try {
-    await discordMember(token.access_token, env.DISCORD_GUILD_ID);
+    member = await discordMember(token.access_token, env.DISCORD_GUILD_ID);
   } catch (error) {
     const status = Number(error?.status || 0);
     const detail = error instanceof Error ? error.message : "Discord membership verification failed. Please try again.";
-    return json({ detail }, [401, 403, 404].includes(status) ? 403 : 503);
+    const responseStatus = status === 429 ? 429 : ([401, 403, 404].includes(status) ? 403 : 503);
+    const headers = status === 429 && error.retryAfter ? { "Retry-After": String(error.retryAfter) } : {};
+    return json({ detail }, responseStatus, headers);
   }
 
   const sessionId = randomToken(32);
-  const expiresAt = Math.floor(Date.now() / 1000) + Number(token.expires_in || 604800);
-  await env.DB.prepare("INSERT INTO sessions (session_id, access_token, refresh_token, user_id, username, expires_at) VALUES (?, ?, ?, ?, ?, ?)")
-    .bind(sessionId, token.access_token, token.refresh_token || "", String(user.id), user.global_name || user.username || "Discord member", expiresAt).run();
+  const now = Math.floor(Date.now() / 1000);
+  const expiresAt = now + Number(token.expires_in || 604800);
+  const memberRoleIds = (member.roles || []).map(String);
+  await env.DB.prepare("INSERT INTO sessions (session_id, access_token, refresh_token, user_id, username, expires_at, member_roles_json, member_verified_at, member_guild_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(sessionId, token.access_token, token.refresh_token || "", String(user.id), user.global_name || user.username || "Discord member", expiresAt, JSON.stringify(memberRoleIds), now, String(env.DISCORD_GUILD_ID || "")).run();
   const destination = env.WEB_POST_LOGIN_URL || url.origin;
   const headers = new Headers();
   headers.set("Location", destination);
@@ -363,16 +403,26 @@ export default {
       if (url.pathname === "/auth/discord" && request.method === "GET") return startDiscordLogin(request, env);
       if (url.pathname === "/auth/discord/callback" && request.method === "GET") return finishDiscordLogin(request, env);
       if (url.pathname === "/api/me" && request.method === "GET") {
-        const session = await getSession(request, env);
-        if (!session) return json({ authenticated: false, divisions: [] });
         try {
-          await discordMember(session.access_token, env.DISCORD_GUILD_ID);
+          const auth = await getAuthorizedMember(request, env);
+          if (!auth) return json({ authenticated: false, divisions: [] });
+          const { session } = auth;
           const userResponse = await fetch("https://discord.com/api/v10/users/@me", {
             headers: { Authorization: "Bearer " + session.access_token }
           });
           if (!userResponse.ok) {
-            const error = new Error("Discord profile verification failed (HTTP " + userResponse.status + "). Please sign in again.");
+            let retryAfter = 0;
+            if (userResponse.status === 429) {
+              const rateLimit = await userResponse.json().catch(() => ({}));
+              retryAfter = Number(rateLimit.retry_after || userResponse.headers.get("Retry-After") ||
+                userResponse.headers.get("X-RateLimit-Reset-After") || 5);
+              retryAfter = Number.isFinite(retryAfter) && retryAfter > 0 ? Math.ceil(retryAfter) : 5;
+            }
+            const error = new Error(userResponse.status === 429
+              ? "Discord is temporarily rate-limiting profile checks. Please wait " + retryAfter + " seconds and refresh."
+              : "Discord profile verification failed (HTTP " + userResponse.status + "). Please sign in again.");
             error.status = userResponse.status;
+            if (retryAfter) error.retryAfter = retryAfter;
             throw error;
           }
           const user = await userResponse.json();
@@ -388,12 +438,15 @@ export default {
         } catch (error) {
           const status = Number(error?.status || 0);
           if ([401, 403, 404].includes(status)) {
-            await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(session.session_id).run();
+            const sessionId = cookieValue(request, "tsrp_ai_session");
+            if (/^[0-9a-f]{64}$/.test(sessionId)) {
+              await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(sessionId).run();
+            }
           }
-          const detail = [401, 403, 404].includes(status)
-            ? (error instanceof Error ? error.message : "Discord session verification failed. Please sign in again.")
-            : "Discord could not verify your session due to a temporary service error. Please try again.";
-          return json({ authenticated: false, divisions: [], detail }, [401, 403, 404].includes(status) ? 403 : 503);
+          const detail = error instanceof Error ? error.message : "Discord session verification failed. Please try again.";
+          const responseStatus = status === 429 ? 429 : ([401, 403, 404].includes(status) ? 403 : 503);
+          const headers = status === 429 && error.retryAfter ? { "Retry-After": String(error.retryAfter) } : {};
+          return json({ authenticated: false, divisions: [], detail }, responseStatus, headers);
         }
       }
       if (url.pathname === "/auth/logout" && request.method === "POST") {
@@ -471,17 +524,12 @@ export default {
         try { body = await request.json(); } catch { return json({ detail: "Request body must be JSON." }, 400); }
         const question = String(body.question || "").trim();
         if (!question || question.length > 1500) return json({ detail: "Question must be between 1 and 1,500 characters." }, 400);
-        const session = await getSession(request, env);
+        const auth = await getAuthorizedMember(request, env);
         let roleIds = new Set();
         let publicOnly = true;
-        if (session) {
-          try {
-            const member = await discordMember(session.access_token, env.DISCORD_GUILD_ID);
-            roleIds = new Set((member.roles || []).map(String));
-            publicOnly = false;
-          } catch {
-            await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(session.session_id).run();
-          }
+        if (auth) {
+          roleIds = auth.roleIds;
+          publicOnly = false;
         }
         const answer = await answerQuestion(env, question, roleIds, publicOnly);
         return json({ answer, authenticated: !publicOnly });
@@ -510,7 +558,10 @@ export default {
       }
       return assetResponse;
     } catch (error) {
-      return json({ detail: error?.message || "Unexpected server error." }, 500);
+      const status = Number(error?.status || 0);
+      const responseStatus = status === 429 ? 429 : 500;
+      const headers = status === 429 && error.retryAfter ? { "Retry-After": String(error.retryAfter) } : {};
+      return json({ detail: error?.message || "Unexpected server error." }, responseStatus, headers);
     }
   }
 };

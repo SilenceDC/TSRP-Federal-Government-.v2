@@ -92,4 +92,4 @@ The spelling “Courthouse” is used in this knowledge file. The owner describe
 - Do not present TSRP as a real government agency or imply affiliation with the United States government.
 - If asked about a role's specific powers, responsibilities, appointment process, or procedures and this file does not say, explain that the information has not yet been provided.
 - If asked about confidential or restricted documents, do not guess or reveal content. Access must be decided by the backend's verified role-based policy.
-- When possible, cite this source as **TSRP Public Government Directory**, with the relevant heading.
+- When citing this source, use the exact title **TSRP Public Government Directory**, with the relevant heading. Do not describe role titles as vacancies or a live member roster.

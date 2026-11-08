@@ -137,6 +137,7 @@ async function getSession(request, env) {
 }
 
 const DISCORD_MEMBER_CACHE_SECONDS = 300;
+const ANNOUNCEMENTS_ADMIN_ROLE_ID = "1569086048850411550";
 
 async function getAuthorizedMember(request, env) {
   const session = await getSession(request, env);
@@ -555,7 +556,7 @@ export default {
     if (
       request.method === "OPTIONS" &&
       origin === CORS_ORIGIN &&
-      (["/api/ask", "/api/me", "/api/conversations", "/auth/logout"].includes(url.pathname) ||
+      (["/api/ask", "/api/me", "/api/conversations", "/api/announcements", "/api/admin/announcements", "/auth/logout"].includes(url.pathname) ||
         /^\/api\/conversations\/[0-9a-f]{32}(?:\/messages)?$/.test(url.pathname))
     ) {
       return new Response(null, {
@@ -583,6 +584,51 @@ export default {
       }
       if (url.pathname === "/auth/discord" && request.method === "GET") return startDiscordLogin(request, env);
       if (url.pathname === "/auth/discord/callback" && request.method === "GET") return finishDiscordLogin(request, env);
+      if (url.pathname === "/api/announcements" && request.method === "GET") {
+        const result = await env.DB.prepare(
+          "SELECT announcement_id, title, body, author_name, published_at FROM announcements WHERE is_published = 1 ORDER BY published_at DESC LIMIT 30"
+        ).all();
+        return json({ announcements: result.results || [] });
+      }
+      if (url.pathname === "/api/admin/announcements" && request.method === "GET") {
+        const auth = await getAuthorizedMember(request, env);
+        if (!auth) return json({ detail: "Sign in with Discord to access the admin panel." }, 401);
+        if (!auth.roleIds.has(ANNOUNCEMENTS_ADMIN_ROLE_ID)) return json({ detail: "You do not have permission to manage announcements." }, 403);
+        const result = await env.DB.prepare(
+          "SELECT announcement_id, title, body, author_name, created_at, published_at FROM announcements ORDER BY created_at DESC LIMIT 100"
+        ).all();
+        return json({ announcements: result.results || [] });
+      }
+      if (url.pathname === "/api/admin/announcements" && request.method === "POST") {
+        const origin = request.headers.get("Origin") || "";
+        if (origin && origin !== CORS_ORIGIN && origin !== url.origin) return json({ detail: "Untrusted request origin." }, 403);
+        const auth = await getAuthorizedMember(request, env);
+        if (!auth) return json({ detail: "Sign in with Discord to publish announcements." }, 401);
+        if (!auth.roleIds.has(ANNOUNCEMENTS_ADMIN_ROLE_ID)) return json({ detail: "You do not have permission to publish announcements." }, 403);
+        let body;
+        try { body = await request.json(); } catch { return json({ detail: "Request body must be JSON." }, 400); }
+        const title = String(body.title || "").trim();
+        const content = String(body.body || "").trim();
+        if (!title || title.length > 100 || !content || content.length > 3000) {
+          return json({ detail: "Add a title (1–100 characters) and announcement (1–3,000 characters)." }, 400);
+        }
+        const id = randomToken(16);
+        const now = Math.floor(Date.now() / 1000);
+        await env.DB.prepare(
+          "INSERT INTO announcements (announcement_id, title, body, author_id, author_name, created_at, updated_at, published_at, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)"
+        ).bind(id, title, content, auth.session.user_id, auth.session.username || "TSRP Admin", now, now, now).run();
+        return json({ ok: true, announcement: { announcement_id: id, title, body: content, author_name: auth.session.username || "TSRP Admin", published_at: now } }, 201);
+      }
+      const announcementDeleteMatch = url.pathname.match(/^\/api\/admin\/announcements\/([0-9a-f]{32})$/);
+      if (announcementDeleteMatch && request.method === "DELETE") {
+        const origin = request.headers.get("Origin") || "";
+        if (origin && origin !== CORS_ORIGIN && origin !== url.origin) return json({ detail: "Untrusted request origin." }, 403);
+        const auth = await getAuthorizedMember(request, env);
+        if (!auth) return json({ detail: "Sign in with Discord to manage announcements." }, 401);
+        if (!auth.roleIds.has(ANNOUNCEMENTS_ADMIN_ROLE_ID)) return json({ detail: "You do not have permission to manage announcements." }, 403);
+        const result = await env.DB.prepare("DELETE FROM announcements WHERE announcement_id = ?").bind(announcementDeleteMatch[1]).run();
+        return json({ ok: true, changes: result.meta?.changes || 0 });
+      }
       if (url.pathname === "/api/me" && request.method === "GET") {
         try {
           const auth = await getAuthorizedMember(request, env);
@@ -612,6 +658,7 @@ export default {
             .bind(displayName, session.session_id).run();
           return json({
             authenticated: true,
+            is_admin: auth.roleIds.has(ANNOUNCEMENTS_ADMIN_ROLE_ID),
             username: user.username,
             display_name: displayName,
             avatar_url: discordAvatarUrl(user)

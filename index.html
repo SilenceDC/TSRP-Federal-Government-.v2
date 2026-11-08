@@ -746,7 +746,7 @@
       const container = document.getElementById('live-positions');
       const updated = document.getElementById('positions-updated');
       try {
-        const response = await fetch('/api/vacancies', { cache: 'no-store' });
+        const response = await fetch(AI_API_BASE + '/api/vacancies', { cache: 'no-store' });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || 'Vacancy data is not available yet.');
         if (!Array.isArray(data.positions) || data.positions.length === 0) {

@@ -1,6 +1,6 @@
 {
   "guild_id": "1560343065586172158",
-  "updated_at": "2026-11-08T21:06:10.843191+00:00",
+  "updated_at": "2026-11-08T21:12:06.146102+00:00",
   "positions": [
     {
       "branch": "Executive Branch",
@@ -152,6 +152,96 @@
       "capacity": 3,
       "filled": 0,
       "vacant": 3,
+      "role_found": true,
+      "status": "open"
+    },
+    {
+      "branch": "USSS",
+      "title": "Director of the U.S. Secret Service",
+      "capacity": 1,
+      "filled": 1,
+      "vacant": 0,
+      "role_found": true,
+      "status": "filled"
+    },
+    {
+      "branch": "USSS",
+      "title": "USSS Deputy Director",
+      "capacity": 2,
+      "filled": 2,
+      "vacant": 0,
+      "role_found": true,
+      "status": "filled"
+    },
+    {
+      "branch": "USSS",
+      "title": "USSS Assistant Director",
+      "capacity": 1,
+      "filled": 0,
+      "vacant": 1,
+      "role_found": true,
+      "status": "open"
+    },
+    {
+      "branch": "USSS",
+      "title": "Special Agent in Charge",
+      "capacity": 1,
+      "filled": 0,
+      "vacant": 1,
+      "role_found": true,
+      "status": "open"
+    },
+    {
+      "branch": "USSS",
+      "title": "Deputy Special Agent in Charge",
+      "capacity": 1,
+      "filled": 0,
+      "vacant": 1,
+      "role_found": true,
+      "status": "open"
+    },
+    {
+      "branch": "USSS",
+      "title": "Assistant to the Special Agent in Charge",
+      "capacity": 1,
+      "filled": 0,
+      "vacant": 1,
+      "role_found": true,
+      "status": "open"
+    },
+    {
+      "branch": "USSS",
+      "title": "Special Agent Supervisor",
+      "capacity": 2,
+      "filled": 0,
+      "vacant": 2,
+      "role_found": true,
+      "status": "open"
+    },
+    {
+      "branch": "USSS",
+      "title": "Senior Agent",
+      "capacity": 2,
+      "filled": 0,
+      "vacant": 2,
+      "role_found": true,
+      "status": "open"
+    },
+    {
+      "branch": "USSS",
+      "title": "Special Agent",
+      "capacity": 3,
+      "filled": 0,
+      "vacant": 3,
+      "role_found": true,
+      "status": "open"
+    },
+    {
+      "branch": "USSS",
+      "title": "Special Agent Recruit",
+      "capacity": 2,
+      "filled": 0,
+      "vacant": 2,
       "role_found": true,
       "status": "open"
     }

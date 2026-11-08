@@ -1,6 +1,10 @@
 name: Sync Discord government vacancies
 
 on:
+  push:
+    paths:
+      - "bot/snapshot.py"
+      - ".github/workflows/sync-vacancies.yml"
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:

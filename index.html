@@ -708,17 +708,13 @@
         }
 
         container.replaceChildren();
-        const renderedApplications = new Set();
         for (const position of data.positions) {
           const card = document.createElement('article');
           card.className = 'career-card';
-
           const top = document.createElement('div');
           top.className = 'career-top';
-
           const title = document.createElement('h3');
           title.textContent = position.title || 'Government position';
-
           const status = document.createElement('span');
           status.className = 'status';
           const vacant = Math.max(0, Number(position.vacant) || 0);
@@ -729,59 +725,60 @@
           } else {
             status.textContent = 'FILLED';
           }
-
           const details = document.createElement('p');
           details.textContent = position.branch || '';
-
           top.append(title, status);
           card.append(top, details);
-
-          // A form appears only when its corresponding role/group has a confirmed vacancy.
-          // The form is omitted entirely when filled or when the Discord role is unconfigured.
-          for (const application of MELONLY_APPLICATIONS) {
-            if (renderedApplications.has(application.key) || !application.matches(position)) continue;
-            renderedApplications.add(application.key);
-            const apply = document.createElement('a');
-            apply.className = 'card-link';
-            if (position.role_found !== false && position.status !== 'unconfigured' && vacant > 0) {
-              apply.href = application.url;
-              apply.target = '_blank';
-              apply.rel = 'noopener noreferrer';
-              apply.textContent = 'Apply via Melonly →';
-            } else {
-              apply.removeAttribute('href');
-              apply.setAttribute('aria-disabled', 'true');
-              apply.style.color = 'var(--muted)';
-              apply.style.cursor = 'default';
-              apply.textContent = 'Applications closed · position filled';
-            }
-            card.append(apply);
-          }
           container.append(card);
         }
 
-        // USSS is not currently included in the Discord vacancy snapshot. Do not show
-        // an application link until the sync is configured to verify its actual capacity.
-        if (!renderedApplications.has('usss')) {
+        // Aggregate by form category: e.g. Cabinet stays open while any Cabinet seat is vacant.
+        for (const application of MELONLY_APPLICATIONS) {
+          const matches = data.positions.filter(application.matches);
+          const configured = matches.filter((position) =>
+            position.role_found !== false && position.status !== 'unconfigured'
+          );
+          const openSeats = configured.reduce((sum, position) =>
+            sum + Math.max(0, Number(position.vacant) || 0), 0
+          );
           const card = document.createElement('article');
           card.className = 'career-card';
           const top = document.createElement('div');
           top.className = 'career-top';
           const title = document.createElement('h3');
-          title.textContent = 'United States Secret Service';
+          title.textContent = application.label + ' Application';
           const status = document.createElement('span');
           status.className = 'status';
-          status.textContent = 'AVAILABILITY UNCONFIRMED';
-          top.append(title, status);
           const details = document.createElement('p');
-          details.textContent = 'The USSS application will appear when its Discord vacancy is connected to the live role tracker.';
+          if (!matches.length || !configured.length) {
+            status.textContent = 'AVAILABILITY UNCONFIRMED';
+            details.textContent = application.key === 'usss'
+              ? 'The USSS role must be added to the Discord vacancy tracker before applications can be safely opened.'
+              : 'The matching Discord role is not configured in the vacancy tracker yet.';
+          } else if (openSeats > 0) {
+            status.textContent = openSeats + ' OPEN';
+            details.textContent = openSeats + ' seat' + (openSeats === 1 ? ' is' : 's are') + ' currently available.';
+            const apply = document.createElement('a');
+            apply.className = 'card-link';
+            apply.href = application.url;
+            apply.target = '_blank';
+            apply.rel = 'noopener noreferrer';
+            apply.textContent = 'Apply via Melonly →';
+            card.append(top, details, apply);
+            container.append(card);
+            continue;
+          } else {
+            status.textContent = 'FILLED';
+            details.textContent = 'All tracked seats for this application category are filled. The application link will return when a vacancy opens.';
+          }
+          top.append(title, status);
           card.append(top, details);
           container.append(card);
         }
 
         if (data.updated_at) {
           updated.textContent = 'Last updated: ' + new Date(data.updated_at).toLocaleString() +
-            ' · Refreshes approximately every 5 minutes. Applications close automatically when seats are filled.';
+            ' · Refreshes approximately every 5 minutes. Application links follow confirmed Discord vacancies.';
         }
       } catch (error) {
         container.textContent = 'Live vacancies are temporarily unavailable. Applications are hidden until availability can be verified.';

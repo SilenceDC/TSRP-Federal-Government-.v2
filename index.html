@@ -728,17 +728,17 @@
     refreshAIStatus();
 
     const MELONLY_APPLICATIONS = [
-      { key: 'presidential', label: 'Presidential', url: 'https://melon.ly/form/7524967269512777728',
+      { key: 'presidential', url: 'https://melon.ly/form/7524967269512777728',
         matches: (position) => position.title === 'President' },
-      { key: 'cabinet', label: 'Cabinet', url: 'https://melon.ly/form/7524967166202875904',
+      { key: 'cabinet', url: 'https://melon.ly/form/7524967166202875904',
         matches: (position) => position.branch === 'Cabinet' },
-      { key: 'representative', label: 'Representative', url: 'https://melon.ly/form/7524967604100796416',
+      { key: 'representative', url: 'https://melon.ly/form/7524967604100796416',
         matches: (position) => position.title === 'Representative' },
-      { key: 'senator', label: 'Senator', url: 'https://melon.ly/form/7524967661751504896',
+      { key: 'senator', url: 'https://melon.ly/form/7524967661751504896',
         matches: (position) => position.title === 'Senator' },
-      { key: 'judicial', label: 'Judicial', url: 'https://melon.ly/form/7524967726125682688',
+      { key: 'judicial', url: 'https://melon.ly/form/7524967726125682688',
         matches: (position) => position.branch === 'Judicial Branch' },
-      { key: 'usss', label: 'USSS', url: 'https://melon.ly/form/7524971337077493760',
+      { key: 'usss', url: 'https://melon.ly/form/7524971337077493760',
         matches: (position) => position.branch === 'USSS' || /USSS|Secret Service/i.test(position.title || '') }
     ];
 
@@ -746,7 +746,6 @@
       const container = document.getElementById('live-positions');
       const updated = document.getElementById('positions-updated');
       try {
-        // Use the Worker API so the same freshness validation used by Aria applies here.
         const response = await fetch('/api/vacancies', { cache: 'no-store' });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || 'Vacancy data is not available yet.');
@@ -766,7 +765,8 @@
           const status = document.createElement('span');
           status.className = 'status';
           const vacant = Math.max(0, Number(position.vacant) || 0);
-          if (position.status === 'unconfigured' || position.role_found === false) {
+          const configured = position.status !== 'unconfigured' && position.role_found !== false;
+          if (!configured) {
             status.textContent = 'ROLE NOT CONFIGURED';
           } else if (vacant > 0) {
             status.textContent = vacant + ' OPEN';
@@ -777,50 +777,24 @@
           details.textContent = position.branch || '';
           top.append(title, status);
           card.append(top, details);
-          container.append(card);
-        }
 
-        // Aggregate by form category: e.g. Cabinet stays open while any Cabinet seat is vacant.
-        for (const application of MELONLY_APPLICATIONS) {
-          const matches = data.positions.filter(application.matches);
-          const configured = matches.filter((position) =>
-            position.role_found !== false && position.status !== 'unconfigured'
-          );
-          const openSeats = configured.reduce((sum, position) =>
-            sum + Math.max(0, Number(position.vacant) || 0), 0
-          );
-          const card = document.createElement('article');
-          card.className = 'career-card';
-          const top = document.createElement('div');
-          top.className = 'career-top';
-          const title = document.createElement('h3');
-          title.textContent = application.label + ' Application';
-          const status = document.createElement('span');
-          status.className = 'status';
-          const details = document.createElement('p');
-          if (!matches.length || !configured.length) {
-            status.textContent = 'AVAILABILITY UNCONFIRMED';
-            details.textContent = application.key === 'usss'
-              ? 'The USSS role must be added to the Discord vacancy tracker before applications can be safely opened.'
-              : 'The matching Discord role is not configured in the vacancy tracker yet.';
-          } else if (openSeats > 0) {
-            status.textContent = openSeats + ' OPEN';
-            details.textContent = openSeats + ' seat' + (openSeats === 1 ? ' is' : 's are') + ' currently available.';
+          // Put the relevant Melonly action directly inside each role card.
+          // Never expose an application link for a role whose vacancy cannot be verified.
+          const application = MELONLY_APPLICATIONS.find((item) => item.matches(position));
+          if (configured && vacant > 0 && application) {
             const apply = document.createElement('a');
             apply.className = 'card-link';
             apply.href = application.url;
             apply.target = '_blank';
             apply.rel = 'noopener noreferrer';
             apply.textContent = 'Apply via Melonly →';
-            card.append(top, details, apply);
-            container.append(card);
-            continue;
-          } else {
-            status.textContent = 'FILLED';
-            details.textContent = 'All tracked seats for this application category are filled. The application link will return when a vacancy opens.';
+            card.append(apply);
+          } else if (configured && application && vacant <= 0) {
+            const closed = document.createElement('p');
+            closed.className = 'application-closed';
+            closed.textContent = 'Applications closed — this position is filled.';
+            card.append(closed);
           }
-          top.append(title, status);
-          card.append(top, details);
           container.append(card);
         }
 
@@ -833,7 +807,6 @@
         updated.textContent = error.message;
       }
     }
-
 
     const announcementList = document.getElementById("announcement-list");
     const announcementAdmin = document.getElementById("announcement-admin");

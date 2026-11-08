@@ -232,6 +232,21 @@
       html { scroll-behavior: auto; }
       *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
     }
+  
+    .announcement-list { display: grid; gap: 14px; max-width: 900px; margin: 0 auto 22px; }
+    .announcement-card, .admin-panel { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); }
+    .announcement-card h3 { margin: 0 0 8px; color: var(--navy); }
+    .announcement-meta { color: var(--muted); font-size: .82rem; margin-bottom: 12px; }
+    .announcement-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .admin-panel { max-width: 900px; margin: 28px auto 0; border-top: 4px solid var(--gold); }
+    .admin-panel h3 { margin-top: 0; color: var(--navy); }
+    .admin-form { display: grid; gap: 12px; }
+    .admin-form input, .admin-form textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 12px; font: inherit; color: var(--ink); background: #fff; }
+    .admin-form textarea { min-height: 120px; resize: vertical; }
+    .admin-announcement-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); }
+    .admin-announcement-row button { flex: 0 0 auto; }
+    .admin-message { min-height: 1.4em; color: var(--muted); font-size: .9rem; }
+    @media (max-width: 600px) { .admin-announcement-row { flex-direction: column; } }
   </style>
 </head>
 <body>
@@ -251,6 +266,7 @@
         <a href="#branches">Government</a>
         <a href="#departments">Departments</a>
         <a href="#careers">Careers</a>
+        <a href="#announcements">Announcements</a>
         <a href="#tsrp-ai">TSRP AI</a>
         <a href="#about">About</a>
       </nav>
@@ -282,6 +298,30 @@
           <a class="button button-outline" href="#careers">View Career Opportunities</a>
         </div>
       </div>
+    </section>
+
+    <section class="section" id="announcements">
+      <div class="section-heading">
+        <div class="section-kicker">Official community updates</div>
+        <h2>Announcements</h2>
+        <p>News and updates published by authorized TSRP government staff.</p>
+      </div>
+      <div class="announcement-list" id="announcement-list" aria-live="polite">
+        <article class="announcement-card"><p>Loading announcements…</p></article>
+      </div>
+      <section class="admin-panel" id="announcement-admin" hidden aria-labelledby="announcement-admin-title">
+        <h3 id="announcement-admin-title">Administration · Publish an announcement</h3>
+        <form class="admin-form" id="announcement-form">
+          <label for="announcement-title">Title</label>
+          <input id="announcement-title" name="title" maxlength="100" required placeholder="Announcement title">
+          <label for="announcement-body">Message</label>
+          <textarea id="announcement-body" name="body" maxlength="3000" required placeholder="Write the announcement for the community…"></textarea>
+          <div><button class="button button-primary" type="submit" id="announcement-publish">Publish announcement</button></div>
+          <p class="admin-message" id="announcement-admin-message" role="status"></p>
+        </form>
+        <h3>Manage published announcements</h3>
+        <div id="admin-announcement-list"><p>Loading admin tools…</p></div>
+      </section>
     </section>
 
     <div class="stats-band" aria-label="Government overview">
@@ -432,6 +472,7 @@
     const newConversationButton = document.getElementById('new-conversation');
     let activeConversationId = null;
     let isAuthenticated = false;
+    let isAdmin = false;
 
     aiLogin.href = '#top-account';
     headerLogin.href = AI_API_BASE + '/auth/discord';
@@ -447,6 +488,9 @@
         const data = await response.json();
         if (data.authenticated) {
           isAuthenticated = true;
+          isAdmin = data.is_admin === true;
+          document.getElementById("announcement-admin").hidden = !isAdmin;
+          if (isAdmin) loadAdminAnnouncements();
           conversationTools.hidden = false;
           loadConversations();
           const username = data.display_name || data.username || 'Discord user';
@@ -472,6 +516,8 @@
           }
         } else {
           isAuthenticated = false;
+          isAdmin = false;
+          document.getElementById("announcement-admin").hidden = true;
           activeConversationId = null;
           conversationTools.hidden = true;
           conversationList.replaceChildren();
@@ -487,6 +533,8 @@
         }
       } catch {
         isAuthenticated = false;
+        isAdmin = false;
+        document.getElementById("announcement-admin").hidden = true;
         headerProfile.hidden = true;
         headerLogin.hidden = false;
         aiLogin.hidden = false;
@@ -785,6 +833,128 @@
         updated.textContent = error.message;
       }
     }
+
+
+    const announcementList = document.getElementById("announcement-list");
+    const announcementAdmin = document.getElementById("announcement-admin");
+    const adminAnnouncementList = document.getElementById("admin-announcement-list");
+    const announcementForm = document.getElementById("announcement-form");
+    const announcementMessage = document.getElementById("announcement-admin-message");
+
+    function formatAnnouncementDate(value) {
+      const date = new Date(Number(value) * 1000);
+      return Number.isNaN(date.getTime()) ? "" : date.toLocaleString();
+    }
+    async function loadAnnouncements() {
+      try {
+        const response = await fetch(AI_API_BASE + "/api/announcements", { cache: "no-store", credentials: "include" });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Announcements are unavailable.");
+        announcementList.replaceChildren();
+        if (!data.announcements?.length) {
+          const empty = document.createElement("article");
+          empty.className = "announcement-card";
+          empty.textContent = "There are no announcements at this time.";
+          announcementList.append(empty);
+          return;
+        }
+        for (const item of data.announcements) {
+          const card = document.createElement("article");
+          card.className = "announcement-card";
+          const title = document.createElement("h3");
+          title.textContent = item.title;
+          const meta = document.createElement("div");
+          meta.className = "announcement-meta";
+          meta.textContent = "Published " + formatAnnouncementDate(item.published_at) + (item.author_name ? " · " + item.author_name : "");
+          const body = document.createElement("p");
+          body.className = "announcement-body";
+          body.textContent = item.body;
+          card.append(title, meta, body);
+          announcementList.append(card);
+        }
+      } catch (error) {
+        announcementList.replaceChildren();
+        const card = document.createElement("article");
+        card.className = "announcement-card";
+        card.textContent = "Announcements are temporarily unavailable: " + error.message;
+        announcementList.append(card);
+      }
+    }
+    async function loadAdminAnnouncements() {
+      if (!isAdmin) return;
+      try {
+        const response = await fetch(AI_API_BASE + "/api/admin/announcements", { credentials: "include", cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Admin announcements could not be loaded.");
+        adminAnnouncementList.replaceChildren();
+        if (!data.announcements?.length) {
+          const empty = document.createElement("p");
+          empty.textContent = "No announcements have been published yet.";
+          adminAnnouncementList.append(empty);
+          return;
+        }
+        for (const item of data.announcements) {
+          const row = document.createElement("div");
+          row.className = "admin-announcement-row";
+          const copy = document.createElement("div");
+          const title = document.createElement("strong");
+          title.textContent = item.title;
+          const meta = document.createElement("p");
+          meta.className = "announcement-meta";
+          meta.textContent = "Published " + formatAnnouncementDate(item.published_at);
+          copy.append(title, meta);
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "button button-outline";
+          remove.textContent = "Delete";
+          remove.addEventListener("click", async () => {
+            if (!window.confirm("Delete this announcement?")) return;
+            remove.disabled = true;
+            try {
+              const deleted = await fetch(AI_API_BASE + "/api/admin/announcements/" + encodeURIComponent(item.announcement_id), {
+                method: "DELETE", credentials: "include", cache: "no-store"
+              });
+              const result = await deleted.json();
+              if (!deleted.ok) throw new Error(result.detail || "Could not delete announcement.");
+              await Promise.all([loadAnnouncements(), loadAdminAnnouncements()]);
+            } catch (error) {
+              announcementMessage.textContent = error.message;
+              remove.disabled = false;
+            }
+          });
+          row.append(copy, remove);
+          adminAnnouncementList.append(row);
+        }
+      } catch (error) {
+        adminAnnouncementList.textContent = error.message;
+      }
+    }
+    announcementForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!isAdmin) return;
+      const publish = document.getElementById("announcement-publish");
+      publish.disabled = true;
+      announcementMessage.textContent = "Publishing…";
+      try {
+        const response = await fetch(AI_API_BASE + "/api/admin/announcements", {
+          method: "POST", credentials: "include", headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            title: document.getElementById("announcement-title").value,
+            body: document.getElementById("announcement-body").value
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Announcement could not be published.");
+        announcementForm.reset();
+        announcementMessage.textContent = "Announcement published.";
+        await Promise.all([loadAnnouncements(), loadAdminAnnouncements()]);
+      } catch (error) {
+        announcementMessage.textContent = error.message;
+      } finally {
+        publish.disabled = false;
+      }
+    });
+    loadAnnouncements();
 
     loadGovernmentPositions();
     window.setInterval(loadGovernmentPositions, 5 * 60 * 1000);

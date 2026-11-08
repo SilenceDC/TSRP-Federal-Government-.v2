@@ -31,6 +31,20 @@ POSITIONS = [
     ("Judicial Branch", [
         ("Chief Justice", 1), ("Associate Justice", 2), ("Federal Judge", 3),
     ]),
+    # USSS staffing cap: 16 total. Existing Director (1) and Deputy Directors (2)
+    # are counted from Discord role membership; capacities are maximum seat counts.
+    ("USSS", [
+        ("Director of the U.S. Secret Service", 1),
+        ("USSS Deputy Director", 2),
+        ("USSS Assistant Director", 1),
+        ("Special Agent in Charge", 1),
+        ("Deputy Special Agent in Charge", 1),
+        ("Assistant to the Special Agent in Charge", 1),
+        ("Special Agent Supervisor", 2),
+        ("Senior Agent", 2),
+        ("Special Agent", 3),
+        ("Special Agent Recruit", 2),
+    ]),
 ]
 
 intents = discord.Intents.default()

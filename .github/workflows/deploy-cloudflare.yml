@@ -7,7 +7,7 @@ on:
       - main
     paths:
       - "src/**"
-      - "index.html"
+      - "index.html"\n      - "favicon.svg"
       - "wrangler.jsonc"
       - "migrations/**"
       - ".github/workflows/deploy-cloudflare.yml"

@@ -281,8 +281,11 @@ async function fetchLiveGovernmentVacancies() {
     throw new Error("The live government vacancy feed returned invalid data.");
   }
   const updatedAt = Date.parse(snapshot.updated_at);
-  if (!Number.isFinite(updatedAt) || Date.now() - updatedAt > 15 * 60 * 1000 || updatedAt > Date.now() + 60 * 1000) {
-    throw new Error("The live government vacancy feed is out of date. Please try again after the next Discord sync.");
+  // Keep serving the last successfully published snapshot until a newer
+  // Discord sync has completed and published its replacement. Age alone is
+  // not a reason to hide otherwise valid vacancy data.
+  if (!Number.isFinite(updatedAt) || updatedAt > Date.now() + 60 * 1000) {
+    throw new Error("The live government vacancy feed returned an invalid update time.");
   }
   return snapshot;
 }

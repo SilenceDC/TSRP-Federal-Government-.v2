@@ -91,7 +91,12 @@ async def on_ready():
         }
         target = Path("data/positions.json")
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(output, indent=2) + "\n", encoding="utf-8")
+        # Write the complete snapshot to a temporary file, then replace the
+        # published file atomically. A failed/incomplete sync never leaves a
+        # partially written vacancy snapshot behind.
+        temporary_target = target.with_name(target.name + ".tmp")
+        temporary_target.write_text(json.dumps(output, indent=2) + "\n", encoding="utf-8")
+        temporary_target.replace(target)
         print(f"Wrote {len(positions)} government positions to {target}.")
     except Exception as exc:
         print(f"Vacancy sync failed: {type(exc).__name__}: {exc}")

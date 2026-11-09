@@ -267,10 +267,19 @@ function isGovernmentVacancyRequest(value) {
 }
 
 async function fetchLiveGovernmentVacancies() {
-  const response = await fetch(
-    "https://raw.githubusercontent.com/SilenceDC/TSRP-Federal-Government-.v2/main/data/positions.json",
-    { headers: { "accept": "application/json", "cache-control": "no-cache" } }
+  // Add a per-request cache key so GitHub's raw-content CDN cannot serve an
+  // older vacancy snapshot after Discord has successfully published a new one.
+  const snapshotUrl = new URL(
+    "https://raw.githubusercontent.com/SilenceDC/TSRP-Federal-Government-.v2/main/data/positions.json"
   );
+  snapshotUrl.searchParams.set("ts", String(Date.now()));
+  const response = await fetch(snapshotUrl.toString(), {
+    headers: {
+      "accept": "application/json",
+      "cache-control": "no-cache, no-store",
+      "pragma": "no-cache"
+    }
+  });
   if (!response.ok) throw new Error("The live government vacancy feed is unavailable (HTTP " + response.status + ").");
   const snapshot = await response.json();
   if (!snapshot || !Array.isArray(snapshot.positions) || !snapshot.updated_at) {

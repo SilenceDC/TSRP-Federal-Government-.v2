@@ -389,7 +389,7 @@
       <div class="career-list" id="live-positions" aria-live="polite">
         <article class="career-card"><div class="career-top"><h3>Loading positions…</h3><span class="status">SYNCING</span></div><p>Connecting to the government role tracker</p></article>
       </div>
-      <div class="notice" id="positions-updated">Vacancy information is refreshed automatically from Discord approximately every 5 minutes.</div>
+      <div class="notice" id="positions-updated">Vacancies stay on the last successful Discord sync until a new sync has finished.</div>
     </section>
 
     <section class="section" id="tsrp-ai">
@@ -801,12 +801,21 @@
         }
 
         if (data.updated_at) {
-          updated.textContent = 'Last updated: ' + new Date(data.updated_at).toLocaleString() +
-            ' · Refreshes approximately every 5 minutes. Application links follow confirmed Discord vacancies.';
+          const lastSync = new Date(data.updated_at);
+          if (!Number.isNaN(lastSync.getTime())) {
+            updated.textContent = 'Last successful Discord sync: ' + lastSync.toLocaleString() +
+              '. This list changes only after a new Discord sync completes successfully.';
+          } else {
+            updated.textContent = 'Showing the last successfully published Discord vacancy sync.';
+          }
         }
       } catch (error) {
-        container.textContent = 'Live vacancies are temporarily unavailable. Applications are hidden until availability can be verified.';
-        updated.textContent = error.message;
+        // Do not clear already-rendered vacancy cards if a later request fails.
+        // The last successfully loaded snapshot remains visible.
+        if (!updated.textContent || updated.textContent.includes('refreshed automatically')) {
+          updated.textContent = 'Could not check for a newer Discord sync. Showing the last successfully loaded vacancy information where available.';
+        }
+        console.error('Could not refresh government vacancies:', error);
       }
     }
 

@@ -6,8 +6,8 @@ on:
       - "bot/snapshot.py"
       - ".github/workflows/sync-vacancies.yml"
   schedule:
-    # Refresh the Discord vacancy snapshot every 15 minutes.
-    - cron: "*/15 * * * *"
+    # Refresh hourly, away from the busy top of the hour.
+    - cron: "17 * * * *"
   workflow_dispatch:
 
 permissions:

@@ -15,6 +15,10 @@ const SYSTEM_PROMPT = [
 ].join(" ");
 
 const CORS_ORIGIN = "https://silencedc.github.io";
+const CORS_ORIGINS = new Set([
+  CORS_ORIGIN,
+  "https://gmrp-federal-government.greatermanchesterroleplay.workers.dev"
+]);
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), {
   status, headers: {
     "content-type": "application/json; charset=utf-8",
@@ -560,16 +564,22 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin") || "";
+    const allowedOrigin = CORS_ORIGINS.has(origin) || origin === url.origin ? origin : "";
+    const apiJson = (data, status = 200, headers = {}) => json(data, status, {
+      ...headers,
+      "access-control-allow-origin": allowedOrigin
+    });
     if (
       request.method === "OPTIONS" &&
-      origin === CORS_ORIGIN &&
+      allowedOrigin &&
       (["/api/ask", "/api/me", "/api/conversations", "/api/announcements", "/api/admin/announcements", "/auth/logout"].includes(url.pathname) ||
-        /^\/api\/conversations\/[0-9a-f]{32}(?:\/messages)?$/.test(url.pathname))
+        /^\/api\/conversations\/[0-9a-f]{32}(?:\/messages)?$/.test(url.pathname) ||
+        /^\/api\/admin\/announcements\/[0-9a-f]{32}$/.test(url.pathname))
     ) {
       return new Response(null, {
         status: 204,
         headers: {
-          "access-control-allow-origin": CORS_ORIGIN,
+          "access-control-allow-origin": allowedOrigin,
           "access-control-allow-credentials": "true",
           "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
           "access-control-allow-headers": "Content-Type",
@@ -580,13 +590,13 @@ export default {
     }
     try {
       if (url.pathname === "/discord/interactions" && request.method === "POST") return handleDiscordInteraction(request, env, ctx);
-      if (url.pathname === "/api/health" && request.method === "GET") return json({ ok: true, service: "GMRP AI Cloudflare Worker", version: "1.0.0" });
+      if (url.pathname === "/api/health" && request.method === "GET") return apiJson({ ok: true, service: "GMRP AI Cloudflare Worker", version: "1.0.0" });
       if (url.pathname === "/api/vacancies" && request.method === "GET") {
         try {
           const snapshot = await fetchLiveGovernmentVacancies();
-          return json({ ...snapshot, source: "Live GMRP Government Vacancy Snapshot" });
+          return apiJson({ ...snapshot, source: "Live GMRP Government Vacancy Snapshot" });
         } catch (error) {
-          return json({ detail: error.message || "Live government vacancy data is unavailable." }, 503);
+          return apiJson({ detail: error.message || "Live government vacancy data is unavailable." }, 503);
         }
       }
       if (url.pathname === "/auth/discord" && request.method === "GET") return startDiscordLogin(request, env);
@@ -595,51 +605,51 @@ export default {
         const result = await env.DB.prepare(
           "SELECT announcement_id, title, body, author_name, published_at FROM announcements WHERE is_published = 1 ORDER BY published_at DESC LIMIT 30"
         ).all();
-        return json({ announcements: result.results || [] });
+        return apiJson({ announcements: result.results || [] });
       }
       if (url.pathname === "/api/admin/announcements" && request.method === "GET") {
         const auth = await getAuthorizedMember(request, env);
-        if (!auth) return json({ detail: "Sign in with Discord to access the admin panel." }, 401);
-        if (!auth.roleIds.has(ANNOUNCEMENTS_ADMIN_ROLE_ID)) return json({ detail: "You do not have permission to manage announcements." }, 403);
+        if (!auth) return apiJson({ detail: "Sign in with Discord to access the admin panel." }, 401);
+        if (!auth.roleIds.has(ANNOUNCEMENTS_ADMIN_ROLE_ID)) return apiJson({ detail: "You do not have permission to manage announcements." }, 403);
         const result = await env.DB.prepare(
           "SELECT announcement_id, title, body, author_name, created_at, published_at FROM announcements ORDER BY created_at DESC LIMIT 100"
         ).all();
-        return json({ announcements: result.results || [] });
+        return apiJson({ announcements: result.results || [] });
       }
       if (url.pathname === "/api/admin/announcements" && request.method === "POST") {
         const origin = request.headers.get("Origin") || "";
-        if (origin && origin !== CORS_ORIGIN && origin !== url.origin) return json({ detail: "Untrusted request origin." }, 403);
+        if (origin && origin !== CORS_ORIGIN && origin !== url.origin) return apiJson({ detail: "Untrusted request origin." }, 403);
         const auth = await getAuthorizedMember(request, env);
-        if (!auth) return json({ detail: "Sign in with Discord to publish announcements." }, 401);
-        if (!auth.roleIds.has(ANNOUNCEMENTS_ADMIN_ROLE_ID)) return json({ detail: "You do not have permission to publish announcements." }, 403);
+        if (!auth) return apiJson({ detail: "Sign in with Discord to publish announcements." }, 401);
+        if (!auth.roleIds.has(ANNOUNCEMENTS_ADMIN_ROLE_ID)) return apiJson({ detail: "You do not have permission to publish announcements." }, 403);
         let body;
-        try { body = await request.json(); } catch { return json({ detail: "Request body must be JSON." }, 400); }
+        try { body = await request.json(); } catch { return apiJson({ detail: "Request body must be JSON." }, 400); }
         const title = String(body.title || "").trim();
         const content = String(body.body || "").trim();
         if (!title || title.length > 100 || !content || content.length > 3000) {
-          return json({ detail: "Add a title (1–100 characters) and announcement (1–3,000 characters)." }, 400);
+          return apiJson({ detail: "Add a title (1–100 characters) and announcement (1–3,000 characters)." }, 400);
         }
         const id = randomToken(16);
         const now = Math.floor(Date.now() / 1000);
         await env.DB.prepare(
           "INSERT INTO announcements (announcement_id, title, body, author_id, author_name, created_at, updated_at, published_at, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)"
         ).bind(id, title, content, auth.session.user_id, auth.session.username || "GMRP Admin", now, now, now).run();
-        return json({ ok: true, announcement: { announcement_id: id, title, body: content, author_name: auth.session.username || "GMRP Admin", published_at: now } }, 201);
+        return apiJson({ ok: true, announcement: { announcement_id: id, title, body: content, author_name: auth.session.username || "GMRP Admin", published_at: now } }, 201);
       }
       const announcementDeleteMatch = url.pathname.match(/^\/api\/admin\/announcements\/([0-9a-f]{32})$/);
       if (announcementDeleteMatch && request.method === "DELETE") {
         const origin = request.headers.get("Origin") || "";
-        if (origin && origin !== CORS_ORIGIN && origin !== url.origin) return json({ detail: "Untrusted request origin." }, 403);
+        if (origin && origin !== CORS_ORIGIN && origin !== url.origin) return apiJson({ detail: "Untrusted request origin." }, 403);
         const auth = await getAuthorizedMember(request, env);
-        if (!auth) return json({ detail: "Sign in with Discord to manage announcements." }, 401);
-        if (!auth.roleIds.has(ANNOUNCEMENTS_ADMIN_ROLE_ID)) return json({ detail: "You do not have permission to manage announcements." }, 403);
+        if (!auth) return apiJson({ detail: "Sign in with Discord to manage announcements." }, 401);
+        if (!auth.roleIds.has(ANNOUNCEMENTS_ADMIN_ROLE_ID)) return apiJson({ detail: "You do not have permission to manage announcements." }, 403);
         const result = await env.DB.prepare("DELETE FROM announcements WHERE announcement_id = ?").bind(announcementDeleteMatch[1]).run();
-        return json({ ok: true, changes: result.meta?.changes || 0 });
+        return apiJson({ ok: true, changes: result.meta?.changes || 0 });
       }
       if (url.pathname === "/api/me" && request.method === "GET") {
         try {
           const auth = await getAuthorizedMember(request, env);
-          if (!auth) return json({ authenticated: false, divisions: [] });
+          if (!auth) return apiJson({ authenticated: false, divisions: [] });
           const { session } = auth;
           const userResponse = await fetch("https://discord.com/api/v10/users/@me", {
             headers: { Authorization: "Bearer " + session.access_token }
@@ -663,7 +673,7 @@ export default {
           const displayName = user.global_name || user.username;
           await env.DB.prepare("UPDATE sessions SET username = ? WHERE session_id = ?")
             .bind(displayName, session.session_id).run();
-          return json({
+          return apiJson({
             authenticated: true,
             is_admin: auth.roleIds.has(ANNOUNCEMENTS_ADMIN_ROLE_ID),
             username: user.username,
@@ -681,70 +691,70 @@ export default {
           const detail = error instanceof Error ? error.message : "Discord session verification failed. Please try again.";
           const responseStatus = status === 429 ? 429 : ([401, 403, 404].includes(status) ? 403 : 503);
           const headers = status === 429 && error.retryAfter ? { "Retry-After": String(error.retryAfter) } : {};
-          return json({ authenticated: false, divisions: [], detail }, responseStatus, headers);
+          return apiJson({ authenticated: false, divisions: [], detail }, responseStatus, headers);
         }
       }
       if (url.pathname === "/auth/logout" && request.method === "POST") {
         const sessionId = cookieValue(request, "tsrp_ai_session");
         if (/^[0-9a-f]{64}$/.test(sessionId)) await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(sessionId).run();
-        return json({ ok: true }, 200, { "Set-Cookie": clearCookie("tsrp_ai_session", "None") });
+        return apiJson({ ok: true }, 200, { "Set-Cookie": clearCookie("tsrp_ai_session", "None") });
       }
       if (url.pathname === "/api/conversations" && request.method === "GET") {
         const auth = await getAuthorizedMember(request, env);
-        if (!auth) return json({ detail: "Sign in with Discord to access conversation history." }, 401);
+        if (!auth) return apiJson({ detail: "Sign in with Discord to access conversation history." }, 401);
         const result = await env.DB.prepare(
           "SELECT conversation_id, title, created_at, updated_at FROM conversations WHERE user_id = ? ORDER BY updated_at DESC LIMIT 50"
         ).bind(auth.session.user_id).all();
-        return json({ conversations: result.results || [] });
+        return apiJson({ conversations: result.results || [] });
       }
       if (url.pathname === "/api/conversations" && request.method === "POST") {
         const auth = await getAuthorizedMember(request, env);
-        if (!auth) return json({ detail: "Sign in with Discord to create a conversation." }, 401);
+        if (!auth) return apiJson({ detail: "Sign in with Discord to create a conversation." }, 401);
         const conversationId = randomToken(16);
         const now = Math.floor(Date.now() / 1000);
         await env.DB.prepare(
           "INSERT INTO conversations (conversation_id, user_id, title, created_at, updated_at) VALUES (?, ?, 'New conversation', ?, ?)"
         ).bind(conversationId, auth.session.user_id, now, now).run();
-        return json({ conversation: { conversation_id: conversationId, title: "New conversation", created_at: now, updated_at: now } }, 201);
+        return apiJson({ conversation: { conversation_id: conversationId, title: "New conversation", created_at: now, updated_at: now } }, 201);
       }
       const conversationDeleteMatch = url.pathname.match(/^\/api\/conversations\/([0-9a-f]{32})$/);
       if (conversationDeleteMatch && request.method === "DELETE") {
         const auth = await getAuthorizedMember(request, env);
-        if (!auth) return json({ detail: "Sign in with Discord to delete a conversation." }, 401);
+        if (!auth) return apiJson({ detail: "Sign in with Discord to delete a conversation." }, 401);
         const conversationId = conversationDeleteMatch[1];
         const conversation = await env.DB.prepare(
           "SELECT conversation_id FROM conversations WHERE conversation_id = ? AND user_id = ?"
         ).bind(conversationId, auth.session.user_id).first();
-        if (!conversation) return json({ detail: "Conversation not found." }, 404);
+        if (!conversation) return apiJson({ detail: "Conversation not found." }, 404);
         await env.DB.batch([
           env.DB.prepare("DELETE FROM messages WHERE conversation_id = ? AND user_id = ?")
             .bind(conversationId, auth.session.user_id),
           env.DB.prepare("DELETE FROM conversations WHERE conversation_id = ? AND user_id = ?")
             .bind(conversationId, auth.session.user_id)
         ]);
-        return json({ ok: true, conversation_id: conversationId });
+        return apiJson({ ok: true, conversation_id: conversationId });
       }
       const conversationMessagesMatch = url.pathname.match(/^\/api\/conversations\/([0-9a-f]{32})\/messages$/);
       if (conversationMessagesMatch && (request.method === "GET" || request.method === "POST")) {
         const auth = await getAuthorizedMember(request, env);
-        if (!auth) return json({ detail: "Sign in with Discord to access conversation history." }, 401);
+        if (!auth) return apiJson({ detail: "Sign in with Discord to access conversation history." }, 401);
         const conversationId = conversationMessagesMatch[1];
         const conversation = await env.DB.prepare(
           "SELECT conversation_id, title FROM conversations WHERE conversation_id = ? AND user_id = ?"
         ).bind(conversationId, auth.session.user_id).first();
-        if (!conversation) return json({ detail: "Conversation not found." }, 404);
+        if (!conversation) return apiJson({ detail: "Conversation not found." }, 404);
         if (request.method === "GET") {
           const result = await env.DB.prepare(
             "SELECT message_id, role, content, created_at FROM messages WHERE conversation_id = ? AND user_id = ? ORDER BY created_at ASC, rowid ASC"
           ).bind(conversationId, auth.session.user_id).all();
-          return json({ conversation, messages: result.results || [] });
+          return apiJson({ conversation, messages: result.results || [] });
         }
         let body;
-        try { body = await request.json(); } catch { return json({ detail: "Request body must be JSON." }, 400); }
+        try { body = await request.json(); } catch { return apiJson({ detail: "Request body must be JSON." }, 400); }
         const question = String(body.question || "").trim();
-        if (!question || question.length > 1500) return json({ detail: "Question must be between 1 and 1,500 characters." }, 400);
+        if (!question || question.length > 1500) return apiJson({ detail: "Question must be between 1 and 1,500 characters." }, 400);
         if (!(await checkRateLimit(env, "web:user:" + auth.session.user_id))) {
-          return json({ detail: "Rate limit reached. Try again shortly." }, 429);
+          return apiJson({ detail: "Rate limit reached. Try again shortly." }, 429);
         }
         const historyResult = await env.DB.prepare(
           "SELECT role, content FROM messages WHERE conversation_id = ? AND user_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 12"
@@ -760,7 +770,7 @@ export default {
           env.DB.prepare("INSERT INTO messages (message_id, conversation_id, user_id, role, content, created_at) VALUES (?, ?, ?, 'assistant', ?, ?)").bind(assistantMessageId, conversationId, auth.session.user_id, answer, now + 1),
           env.DB.prepare("UPDATE conversations SET title = ?, updated_at = ? WHERE conversation_id = ? AND user_id = ?").bind(nextTitle, now + 1, conversationId, auth.session.user_id)
         ]);
-        return json({
+        return apiJson({
           answer,
           conversation: { conversation_id: conversationId, title: nextTitle },
           messages: [
@@ -771,11 +781,11 @@ export default {
       }
       if (url.pathname === "/api/ask" && request.method === "POST") {
         const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-        if (!(await checkRateLimit(env, "web:" + ip))) return json({ detail: "Rate limit reached. Try again shortly." }, 429);
+        if (!(await checkRateLimit(env, "web:" + ip))) return apiJson({ detail: "Rate limit reached. Try again shortly." }, 429);
         let body;
-        try { body = await request.json(); } catch { return json({ detail: "Request body must be JSON." }, 400); }
+        try { body = await request.json(); } catch { return apiJson({ detail: "Request body must be JSON." }, 400); }
         const question = String(body.question || "").trim();
-        if (!question || question.length > 1500) return json({ detail: "Question must be between 1 and 1,500 characters." }, 400);
+        if (!question || question.length > 1500) return apiJson({ detail: "Question must be between 1 and 1,500 characters." }, 400);
         const auth = await getAuthorizedMember(request, env);
         let roleIds = new Set();
         let publicOnly = true;
@@ -784,7 +794,7 @@ export default {
           publicOnly = false;
         }
         const answer = await answerQuestion(env, question, roleIds, publicOnly);
-        return json({ answer, authenticated: !publicOnly });
+        return apiJson({ answer, authenticated: !publicOnly });
       }
       const assetResponse = await env.ASSETS.fetch(request);
       if (
@@ -813,7 +823,7 @@ export default {
       const status = Number(error?.status || 0);
       const responseStatus = status === 429 ? 429 : 500;
       const headers = status === 429 && error.retryAfter ? { "Retry-After": String(error.retryAfter) } : {};
-      return json({ detail: error?.message || "Unexpected server error." }, responseStatus, headers);
+      return apiJson({ detail: error?.message || "Unexpected server error." }, responseStatus, headers);
     }
   }
 };

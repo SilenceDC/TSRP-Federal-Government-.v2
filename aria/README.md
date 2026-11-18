@@ -1,6 +1,6 @@
-# ARIA — TSRP Government AI
+# ARIA — GMRP Government AI
 
-ARIA is the planned knowledge assistant for the fictional TSRP roleplay community.
+ARIA is the planned knowledge assistant for the fictional Greater Manchester Roleplay (GMRP) community.
 
 ## First milestone: knowledge foundation
 
@@ -11,8 +11,8 @@ This directory establishes a source-controlled, public-safe knowledge base and a
 The first permission pass is intentionally small:
 
 - **Citizen**: members with the approved `@Citzen` role can ask civilian/general questions and receive public information.
-- **USSS**: members with any approved USSS role can receive the TSRP government information supplied for ARIA, including the initial directory/facility information, plus public information.
-- **Executive**: members with any approved Executive role can receive the TSRP government information supplied for ARIA, including the initial directory/facility information, plus public information.
+- **USSS**: members with any approved USSS role can receive the GMRP government information supplied for ARIA, including the initial directory/facility information, plus public information.
+- **Executive**: members with any approved Executive role can receive the GMRP government information supplied for ARIA, including the initial directory/facility information, plus public information.
 - **Everyone else**: public information only until more groups and permissions are explicitly added.
 
 The `-USSS-` and `-Executive-` text in Discord role names can be used as a setup-time hint to help an administrator sort roles into groups. It must not itself grant access. The backend must authorize using the actual Discord role IDs on the verified guild-member object. The Citizen role must also be mapped to its actual role ID. If a member has more than one approved role, their access is the union of the explicitly assigned groups.

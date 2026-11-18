@@ -1,4 +1,4 @@
-# TSRP AI — Cloudflare deployment and security
+# GMRP AI — Cloudflare deployment and security
 
 The Cloudflare Worker in src/index.js replaces the Python/FastAPI web service and the always-on Discord Gateway bot. The same Worker serves website assets, Discord OAuth, the public AI API and signed Discord interactions.
 
@@ -48,7 +48,7 @@ The redirect URI registered in Discord must exactly match DISCORD_REDIRECT_URI. 
 
 Restricted content is stored in D1, not in the static manifest or public files. The Worker first reads only the private document's title and role allowlist, checks for an intersection with the verified user's live Discord roles, and only then reads the private document text. The manifest contains a document_id pointer, not the private text.
 
-The supplied division roles (Executive, Cabinet, Legislative, Judicial, USSS) do not automatically grant access to every restricted document. Each document must have its own approved role allowlist. Keep presidential, cabinet, and USSS documents restricted to the exact people/roles authorized by TSRP leadership.
+The supplied division roles (Executive, Cabinet, Legislative, Judicial, USSS) do not automatically grant access to every restricted document. Each document must have its own approved role allowlist. Keep presidential, cabinet, and USSS documents restricted to the exact people/roles authorized by GMRP leadership.
 
 ## Current limitations
 

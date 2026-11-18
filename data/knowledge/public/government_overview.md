@@ -1,4 +1,4 @@
-# TSRP Federal Government — Public Overview
+# Greater Manchester Roleplay Federal Government — Public Overview
 
 This is a fictional roleplay community, not a real government agency.
 
@@ -25,4 +25,4 @@ Director of the U.S. Secret Service, USSS Deputy Director, USSS Assistant Direct
 - Valley Transit — postal code 223; used mainly by the Secret Service.
 
 ## Source and accuracy rules
-This overview reflects information supplied for the TSRP AI project. It is not a complete constitution, policy manual, or legal code. If a question requires a rule, procedure, application requirement, or authority not stated here, TSRP AI must say that the information is not yet in its loaded sources rather than inventing an answer.
+This overview reflects information supplied for the GMRP AI project. It is not a complete constitution, policy manual, or legal code. If a question requires a rule, procedure, application requirement, or authority not stated here, GMRP AI must say that the information is not yet in its loaded sources rather than inventing an answer.

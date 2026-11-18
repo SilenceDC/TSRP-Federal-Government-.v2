@@ -1,6 +1,6 @@
-# TSRP Federal Government — Cloudflare setup
+# Greater Manchester Roleplay Federal Government — Cloudflare setup
 
-The public website, TSRP AI API, Discord slash-command endpoint and OAuth login are designed to run on Cloudflare Workers with static assets, D1 and the Workers AI binding. The existing GitHub Actions vacancy sync remains separate and unchanged. The live portal is served by the Cloudflare Worker at https://tsrp-federal-government--v2.tsrp-community.workers.dev/. The GitHub Pages URL is not the production address. The website and API use the same origin, so Discord sign-in and API requests stay on this neutral hostname.
+The public website, GMRP AI API, Discord slash-command endpoint and OAuth login are designed to run on Cloudflare Workers with static assets, D1 and the Workers AI binding. The existing GitHub Actions vacancy sync remains separate and unchanged. The live portal is served by the Cloudflare Worker at https://tsrp-federal-government--v2.tsrp-community.workers.dev/. The GitHub Pages URL is not the production address. The website and API use the same origin, so Discord sign-in and API requests stay on this neutral hostname.
 
 ## Hosting architecture
 
@@ -25,8 +25,8 @@ Cloudflare currently lists a Workers Free allowance of 100,000 requests/day and 
    - **npx wrangler secret put DISCORD_CLIENT_SECRET**
    - **npx wrangler secret put DISCORD_PUBLIC_KEY**
 8. Set non-secret Worker variables in Cloudflare dashboard (Worker → Settings → Variables) or wrangler.jsonc:
-   - **DISCORD_CLIENT_ID** and **DISCORD_APPLICATION_ID** — your dedicated TSRP AI Discord application ID.
-   - **DISCORD_GUILD_ID** — the TSRP Discord server ID.
+   - **DISCORD_CLIENT_ID** and **DISCORD_APPLICATION_ID** — your dedicated GMRP AI Discord application ID.
+   - **DISCORD_GUILD_ID** — the GMRP Discord server ID.
    - **DISCORD_REDIRECT_URI** — after the first deployment, set this to https://tsrp-federal-government--v2.tsrp-community.workers.dev/auth/discord/callback using your actual Worker hostname.
    - **WEB_POST_LOGIN_URL** — set this to https://tsrp-federal-government--v2.tsrp-community.workers.dev/.
    - **AI_MODEL** — defaults to `@cf/zai-org/glm-4.7-flash` through the built-in Cloudflare Workers AI binding; no Groq key is required.
@@ -38,13 +38,13 @@ Cloudflare currently lists a Workers Free allowance of 100,000 requests/day and 
     - macOS/Linux: **DISCORD_APPLICATION_ID=... DISCORD_BOT_TOKEN=... DISCORD_GUILD_ID=... npm run discord:register**
     - Windows PowerShell: set those three environment variables first, then run **npm run discord:register**.
 14. In Discord Developer Portal → General Information, set Interactions Endpoint URL to https://tsrp-federal-government--v2.tsrp-community.workers.dev/discord/interactions. Save after the endpoint is deployed and responding.
-15. Test https://tsrp-federal-government--v2.tsrp-community.workers.dev/api/health, sign in from the website, then test /ask in the TSRP server.
+15. Test https://tsrp-federal-government--v2.tsrp-community.workers.dev/api/health, sign in from the website, then test /ask in the GMRP server.
 
 For Git-based automatic deployments, connect the repository to Cloudflare Workers Builds after the first successful manual deployment. Do not commit API keys or tokens. A Cloudflare API token and account ID are needed if you instead choose to deploy from GitHub Actions.
 
 ## Discord bot permissions
 
-Use a dedicated Discord application for TSRP AI. Invite it with the applications.commands scope; it does not need Administrator or a persistent Gateway connection. Set the public key from the Developer Portal as a Worker secret. The Worker verifies Discord's Ed25519 request signature and only accepts commands from the configured TSRP guild.
+Use a dedicated Discord application for GMRP AI. Invite it with the applications.commands scope; it does not need Administrator or a persistent Gateway connection. Set the public key from the Developer Portal as a Worker secret. The Worker verifies Discord's Ed25519 request signature and only accepts commands from the configured GMRP guild.
 
 The slash command is registered by **scripts/register-discord-command.mjs**. Set DISCORD_APPLICATION_ID, DISCORD_BOT_TOKEN and DISCORD_GUILD_ID in your local terminal only when running the registration script; the bot token is not stored in Cloudflare and is not needed for handling interactions once the command is registered.
 
@@ -60,7 +60,7 @@ The existing website AI panel calls the Worker on the same origin. Discord OAuth
 - Division roles are not blanket permission grants. Add only the roles explicitly approved for each document.
 - Current knowledge files are public only. The Melonly export has not been imported; review and classify it before adding any material.
 
-Known role IDs supplied for TSRP:
+Known role IDs supplied for GMRP:
 - Executive Branch: 1561074965363560568
 - Cabinet: 1561075778303828190
 - Legislative Branch: 1561076079710576700

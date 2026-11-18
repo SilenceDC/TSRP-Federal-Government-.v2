@@ -16,7 +16,7 @@ from itsdangerous import BadSignature, URLSafeTimedSerializer
 
 from tsrp_ai.answer import answer_question
 
-app = FastAPI(title="TSRP AI API", version="0.2.0")
+app = FastAPI(title="GMRP AI API", version="0.2.0")
 origins = [x.strip() for x in os.getenv("WEB_ALLOWED_ORIGINS", "").split(",") if x.strip()]
 if origins:
     app.add_middleware(
@@ -82,7 +82,7 @@ async def _discord_member(access_token: str, guild_id: str) -> dict:
 
 @app.get("/api/health")
 async def health():
-    return {"ok": True, "service": "TSRP AI", "version": "0.2.0"}
+    return {"ok": True, "service": "GMRP AI", "version": "0.2.0"}
 
 
 @app.get("/auth/discord")
@@ -146,7 +146,7 @@ async def discord_callback(request: Request, code: str, state: str):
             headers={"Authorization": f"Bearer {access_token}"},
         )
         if member_response.status_code in (401, 403, 404):
-            raise HTTPException(status_code=403, detail="You must be a member of the TSRP Discord server to use role-based website access.")
+            raise HTTPException(status_code=403, detail="You must be a member of the GMRP Discord server to use role-based website access.")
         member_response.raise_for_status()
         member = member_response.json()
         user_response = await client.get(

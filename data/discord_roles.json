@@ -1,6 +1,6 @@
 {
-  "description": "Division role IDs supplied for TSRP AI configuration.",
-  "authorization_note": "These are division membership/grouping roles only. They do not grant access to restricted documents. Restricted documents require explicit per-document role allowlists.",
+  "description": "Division role IDs supplied for GMRP AI configuration.",
+  "authorization_note": "These are existing division membership/grouping role IDs. Replace them with the new GMRP Discord server's role IDs before enabling role-based access. They do not grant access to restricted documents; restricted documents require explicit per-document role allowlists.",
   "divisions": {
     "Executive": "1561074965363560568",
     "Cabinet": "1561075778303828190",

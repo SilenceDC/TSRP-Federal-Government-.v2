@@ -1,4 +1,4 @@
-"""Small, permission-aware Markdown knowledge base for TSRP AI."""
+"""Small, permission-aware Markdown knowledge base for GMRP AI."""
 from __future__ import annotations
 
 import json

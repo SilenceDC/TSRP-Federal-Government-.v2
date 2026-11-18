@@ -1,7 +1,7 @@
-# TSRP Federal Government — Public Knowledge
+# Greater Manchester Roleplay Federal Government — Public Knowledge
 
 **Classification:** Public community information  
-**Source:** Information supplied by the TSRP community owner  
+**Source:** Information supplied by the GMRP community owner  
 **Scope:** Government role directory, Secret Service role directory, and community facilities
 
 ARIA may answer questions from this file. It must not infer additional powers, duties, procedures, reporting lines, or legal rules that are not stated here.
@@ -70,7 +70,7 @@ The role list does not by itself define the authority, duties, qualification sta
 
 ## Community facilities and postal codes
 
-The TSRP community owner states that the community owns or operates the following locations:
+The GMRP community owner states that the community owns or operates the following locations:
 
 | Facility | Postal code | Stated use |
 |---|---:|---|
@@ -88,8 +88,8 @@ The spelling “Courthouse” is used in this knowledge file. The owner describe
 
 ## Answering rules
 
-- Treat this as information about the fictional TSRP roleplay community.
-- Do not present TSRP as a real government agency or imply affiliation with the United States government.
+- Treat this as information about the fictional Greater Manchester Roleplay (GMRP) community.
+- Do not present GMRP as a real government agency or imply affiliation with the United States government.
 - If asked about a role's specific powers, responsibilities, appointment process, or procedures and this file does not say, explain that the information has not yet been provided.
 - If asked about confidential or restricted documents, do not guess or reveal content. Access must be decided by the backend's verified role-based policy.
-- When citing this source, use the exact title **TSRP Public Government Directory**, with the relevant heading. Do not describe role titles as vacancies or a live member roster.
+- When citing this source, use the exact title **Greater Manchester Roleplay Public Government Directory**, with the relevant heading. Do not describe role titles as vacancies or a live member roster.

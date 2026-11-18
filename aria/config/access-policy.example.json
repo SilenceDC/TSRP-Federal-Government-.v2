@@ -34,7 +34,7 @@
         "initial_government_directory"
       ],
       "role_name_setup_hint": "-USSS-",
-      "description": "Any explicitly approved USSS role ID grants access to public information and the initial TSRP government information supplied for ARIA."
+      "description": "Any explicitly approved USSS role ID grants access to public information and the initial GMRP government information supplied for ARIA."
     },
     "executive": {
       "required_discord_role_ids": [
@@ -45,7 +45,7 @@
         "initial_government_directory"
       ],
       "role_name_setup_hint": "-Executive-",
-      "description": "Any explicitly approved Executive role ID grants access to public information and the initial TSRP government information supplied for ARIA."
+      "description": "Any explicitly approved Executive role ID grants access to public information and the initial GMRP government information supplied for ARIA."
     }
   },
   "document_access": {

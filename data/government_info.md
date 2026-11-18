@@ -1,4 +1,4 @@
-# TSRP Federal Government — Server Information
+# Greater Manchester Roleplay Federal Government — Server Information
 
 Add your server's actual rules, departments, application process, role descriptions, and procedures below. The AI assistant is instructed not to invent missing information.
 

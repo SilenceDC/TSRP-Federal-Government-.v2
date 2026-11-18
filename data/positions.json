@@ -1,6 +1,6 @@
 {
   "guild_id": "1560343065586172158",
-  "updated_at": "2026-11-18T01:42:01.042241+00:00",
+  "updated_at": "2026-11-18T03:10:38.305011+00:00",
   "positions": [
     {
       "branch": "Executive Branch",
@@ -114,17 +114,17 @@
       "branch": "Legislative Branch",
       "title": "Senate Majority Leader",
       "capacity": 1,
-      "filled": 1,
-      "vacant": 0,
+      "filled": 0,
+      "vacant": 1,
       "role_found": true,
-      "status": "filled"
+      "status": "open"
     },
     {
       "branch": "Legislative Branch",
       "title": "Senator",
       "capacity": 5,
-      "filled": 2,
-      "vacant": 3,
+      "filled": 1,
+      "vacant": 4,
       "role_found": true,
       "status": "open"
     },

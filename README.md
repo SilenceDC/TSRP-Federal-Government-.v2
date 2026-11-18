@@ -1,6 +1,6 @@
 # Greater Manchester Roleplay Federal Government — Cloudflare setup
 
-The public website, GMRP AI API, Discord slash-command endpoint and OAuth login are designed to run on Cloudflare Workers with static assets, D1 and the Workers AI binding. The existing GitHub Actions vacancy sync remains separate and unchanged. The live portal is served by the Cloudflare Worker at https://tsrp-federal-government--v2.tsrp-community.workers.dev/. The GitHub Pages URL is not the production address. The website and API use the same origin, so Discord sign-in and API requests stay on this neutral hostname.
+The public website, GMRP AI API, Discord slash-command endpoint and OAuth login are designed to run on Cloudflare Workers with static assets, D1 and the Workers AI binding. The existing GitHub Actions vacancy sync remains separate and unchanged. The live portal is served by the Cloudflare Worker at https://gmrp-federal-government.greatermanchesterroleplay.workers.dev/. The GitHub Pages URL is not the production address. The website and API use the same origin, so Discord sign-in and API requests stay on this neutral hostname.
 
 ## Hosting architecture
 
@@ -27,8 +27,8 @@ Cloudflare currently lists a Workers Free allowance of 100,000 requests/day and 
 8. Set non-secret Worker variables in Cloudflare dashboard (Worker → Settings → Variables) or wrangler.jsonc:
    - **DISCORD_CLIENT_ID** and **DISCORD_APPLICATION_ID** — your dedicated GMRP AI Discord application ID.
    - **DISCORD_GUILD_ID** — the GMRP Discord server ID.
-   - **DISCORD_REDIRECT_URI** — after the first deployment, set this to https://tsrp-federal-government--v2.tsrp-community.workers.dev/auth/discord/callback using your actual Worker hostname.
-   - **WEB_POST_LOGIN_URL** — set this to https://tsrp-federal-government--v2.tsrp-community.workers.dev/.
+   - **DISCORD_REDIRECT_URI** — after the first deployment, set this to https://gmrp-federal-government.greatermanchesterroleplay.workers.dev/auth/discord/callback using your actual Worker hostname.
+   - **WEB_POST_LOGIN_URL** — set this to https://gmrp-federal-government.greatermanchesterroleplay.workers.dev/.
    - **AI_MODEL** — defaults to `@cf/zai-org/glm-4.7-flash` through the built-in Cloudflare Workers AI binding; no Groq key is required.
 9. In Discord Developer Portal → General Information, copy the Public Key into Worker secret DISCORD_PUBLIC_KEY.
 10. Deploy once with **npm run deploy**. The first deployment creates the workers.dev hostname. The OAuth routes will remain unconfigured until you set the remaining variables.
@@ -37,8 +37,8 @@ Cloudflare currently lists a Workers Free allowance of 100,000 requests/day and 
 13. Register the server slash command from the project folder:
     - macOS/Linux: **DISCORD_APPLICATION_ID=... DISCORD_BOT_TOKEN=... DISCORD_GUILD_ID=... npm run discord:register**
     - Windows PowerShell: set those three environment variables first, then run **npm run discord:register**.
-14. In Discord Developer Portal → General Information, set Interactions Endpoint URL to https://tsrp-federal-government--v2.tsrp-community.workers.dev/discord/interactions. Save after the endpoint is deployed and responding.
-15. Test https://tsrp-federal-government--v2.tsrp-community.workers.dev/api/health, sign in from the website, then test /ask in the GMRP server.
+14. In Discord Developer Portal → General Information, set Interactions Endpoint URL to https://gmrp-federal-government.greatermanchesterroleplay.workers.dev/discord/interactions. Save after the endpoint is deployed and responding.
+15. Test https://gmrp-federal-government.greatermanchesterroleplay.workers.dev/api/health, sign in from the website, then test /ask in the GMRP server.
 
 For Git-based automatic deployments, connect the repository to Cloudflare Workers Builds after the first successful manual deployment. Do not commit API keys or tokens. A Cloudflare API token and account ID are needed if you instead choose to deploy from GitHub Actions.
 

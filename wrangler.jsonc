@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tsrp-federal-government--v2",
+  "name": "gmrp-federal-government",
   "main": "src/index.js",
   "compatibility_date": "2026-11-06",
   "workers_dev": true,
@@ -24,8 +24,8 @@
   "vars": {
     "AI_MODEL": "@cf/zai-org/glm-4.7-flash",
     "DISCORD_CLIENT_ID": "1568333697021776055",
-    "DISCORD_REDIRECT_URI": "https://tsrp-federal-government--v2.tsrp-community.workers.dev/auth/discord/callback",
-    "WEB_POST_LOGIN_URL": "https://tsrp-federal-government--v2.tsrp-community.workers.dev/"
+    "DISCORD_REDIRECT_URI": "https://gmrp-federal-government.greatermanchesterroleplay.workers.dev/auth/discord/callback",
+    "WEB_POST_LOGIN_URL": "https://gmrp-federal-government.greatermanchesterroleplay.workers.dev/"
   },
   "observability": {
     "enabled": true
